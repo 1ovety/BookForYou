@@ -1,0 +1,852 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="orderMapper">
+	
+	<resultMap type="Order" id="orderResult">
+		<result column="order_no" property="orderNo"/>
+		<result column="mem_no" property="memNo"/>
+		<result column="mem_name" property="memName"/>
+		<result column="mem_id" property="memId"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="pay_way" property="payWay"/>
+		<result column="pay_no" property="payNo"/>
+		<result column="order_date" property="orderDate"/>
+		<result column="order_receiver" property="orderReceiver"/>
+		<result column="order_post" property="orderPost"/>
+		<result column="order_address" property="orderAddress"/>
+		<result column="address_detail" property="addressDetail"/>
+		<result column="address_ref" property="addressRef"/>
+		<result column="order_phone" property="orderPhone"/>
+		<result column="delivery_msg" property="deliveryMsg"/>
+		<result column="order_price" property="orderPrice"/>
+		<result column="add_price" property="addPrice"/>
+		<result column="used_points" property="usedPoints"/>
+		<result column="order_status" property="orderStatus"/>
+		<result column="pay_status" property="payStatus"/>
+		<result column="cs_status" property="csStatus"/>
+		<result column="admin_memo" property="adminMemo"/>
+		<result column="product_status" property="productStatus"/>
+		<result column="delivery_company" property="deliveryCompany"/>
+		<result column="shipping_number" property="shippingNumber"/>
+		<result column="shipping_date" property="shippingDate"/>
+		<result column="delivery_status" property="deliveryStatus"/>
+		<result column="coupon_issue_num" property="couponIssueNum"/>
+		<result column="detail_price" property="detailPrice"/>
+		<result column="coupon_price" property="couponPrice"/>
+		<result column="coupon_pricerate" property="couponPriceRate"/>
+		<result column="order_price_comma" property="orderPriceComma"/>
+	</resultMap>
+	
+	<resultMap type="OrderDetail" id="orderDetailResult">
+		<result column="order_no" property="orderNo"/>
+		<result column="bk_no" property="bkNo"/>
+		<result column="quantity" property="quantity"/>
+		<result column="detail_price" property="detailPrice"/>
+		<result column="detail_status" property="detailStatus"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="bk_publish" property="bkPublish"/>
+		<result column="writer_name" property="writerName"/>
+		<result column="intro_changename" property="introChangeName"/>
+		<result column="grade_star" property="gradeStar" />
+	</resultMap>
+
+	<resultMap id="bookResult" type="Book">
+		<result column="bk_no" property="bkNo"/>
+		<result column="sub_cate_no" property="subCateNo"/>
+		<result column="main_cate_name" property="mainCateName"/>
+		<result column="sub_cate_name" property="subCateName"/>
+		<result column="interest_content" property="interestContent"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="bk_publish" property="bkPublish"/>
+		<result column="bk_date" property="bkDate"/>
+		<result column="bk_price" property="bkPrice"/>
+		<result column="intro_originname" property="introOriginName"/>
+		<result column="intro_changename" property="introChangeName"/>
+		<result column="bk_stock" property="bkStock"/>
+		<result column="bk_seldate" property="bkSelDate"/>
+		<result column="bk_mdate" property="bkModiDate"/>
+		<result column="bk_selstatus" property="bkSelStatus"/>
+		<result column="bk_age" property="bkAge"/>
+		<result column="bk_gender" property="bkGender"/>
+		<result column="bk_work" property="bkWork"/>
+		<result column="bk_level" property="bkLevel"/>
+		<result column="bk_status" property="bkStatus"/>
+		<result column="writer_name" property="writerName"/>
+		<result column="writer_intro" property="writerIntro"/>
+		<result column="writer_origin_name" property="writerOriginName"/>
+		<result column="writer_change_name" property="writerChangeName"/>
+		<result column="bk_content" property="bkContent"/>
+		<result column="grade_star" property="bkGrade"/>
+		<result column="cart_qty" property="bkQty"/>
+	</resultMap>
+	
+	<!-- [관리자] 전체 주문 개수 조회 (한진) -->
+	<select id="selectAllListCount" resultType="_int">
+		select 
+			   count(*)
+		  from orders
+	</select>
+	
+	<!-- [관리자] 전체 주문 목록 조회 (한진) -->
+	<select id="selectAdminOrderList" resultMap="orderResult">
+		select
+		       O.order_no,
+		       M.mem_name,
+		       M.mem_id,
+		       regexp_replace(reverse(regexp_replace(reverse(to_char(P.price)), '([0-9]{3})','\1,')),'^,','') as "order_price_comma",
+		       O.order_date,
+		       O.order_status,
+		       O.cs_status,
+		       O.delivery_company,
+		       O.shipping_number,
+		       O.shipping_date,
+		       O.delivery_status,
+		       O.product_status,
+		       O.delivery_msg,
+		       O.admin_memo,
+		       bk_title || decode(A."quantity", 1, null, ' 외 ' || to_char(A."quantity" - 1) || '권') as "bk_title"
+		  from (
+		         select
+		                order_no "order_no",
+		                min (bk_no) "bk_no",
+		                sum(quantity) "quantity"
+		           from order_detail
+		          group by order_no
+		        )A,
+		        orders O,
+		        book B,
+		        Members M,
+		        payment P
+		  where A."bk_no" = B.bk_no
+		    and A."order_no" = O.order_no
+		    and M.mem_no = O.mem_no
+		    and O.pay_no = P.pay_no
+		 <choose>
+		 	<when test="orStatus == 1">
+		 		and order_status = '주문확인'
+		 	</when> 
+		 	<when test="orStatus == 2">
+		 		and order_status = '상품준비중'
+		 	</when>	
+		 	<when test="orStatus == 3">
+		 		and order_status = '배송준비중'
+		 	</when>
+		 	<when test="orStatus == 4">
+		 		and order_status = '배송중'
+		 	</when>
+		 	<when test="orStatus == 5">
+		 		and order_status = '배송완료'
+		 	</when>
+		 </choose>
+		 order
+		    by 
+		 <choose>
+		 	<when test="array == 0">
+		 		order_date desc
+		 	</when> 
+		 	<when test="array == 1">
+		 		order_date asc
+		 	</when>	
+		 </choose> 
+	</select>
+	
+	<!-- [사용자] 도서 주문 조회 (연지) -->
+	<!-- 
+	<select id="selectOrder" resultMap="orderResult">
+		select order_no,
+			   mem_no,
+			   pay_no,
+			   order_date,
+			   order_receiver,
+			   order_post,
+			   order_address,
+			   address_detail,
+			   address_ref,
+			   order_phone,
+			   delivery_msg,
+			   order_price,
+			   add_price,
+			   used_points,
+			   order_status,
+			   pay_status,
+			   cs_status,
+			   admin_memo,
+			   delivery_company,
+			   shipping_number,
+			   shipping_date,
+			   delivery_status,
+			   coupon_issue_num,
+			   detail_price
+		  from orders
+		  join (select order_no, sum(detail_price) detail_price
+				from order_detail
+                group by order_no
+                having order_no = #{orderNo}) using (order_no)
+		 where order_no = #{orderNo}
+	</select>
+	 -->
+	
+	<!-- [사용자] 도서 주문 조회 (연지) -->
+	<select id="selectOrder" resultMap="orderResult">
+	select order_no,
+			   mem_no,
+			   pay_no,
+			   order_date,
+			   order_receiver,
+			   order_post,
+			   order_address,
+			   address_detail,
+			   address_ref,
+			   order_phone,
+			   delivery_msg,
+			   order_price,
+			   add_price,
+			   used_points,
+			   order_status,
+			   pay_status,
+			   cs_status,
+			   admin_memo,
+			   delivery_company,
+			   shipping_number,
+			   shipping_date,
+			   delivery_status,
+			   nvl(o.coupon_issue_num, 0),
+			   detail_price,
+               nvl(c.coupon_price, 0) coupon_price,
+               nvl(c.coupon_pricerate, 0) coupon_pricerate
+	  from (select coupon_issue_num, coupon_price, coupon_pricerate
+	        from (select coupon_issue_num, coupon_no, c.coupon_price, coupon_pricerate
+	                from coupon c
+	                join mem_coupon mc using (coupon_no))
+	        where coupon_no = (select coupon_no
+	                             from mem_coupon
+	                             where COUPON_ISSUE_NUM = (select COUPON_ISSUE_NUM
+	                                                         from orders
+	                                                        where order_no = #{orderNo}))) c
+	  right join (select order_no,
+				   mem_no,
+				   pay_no,
+				   order_date,
+				   order_receiver,
+				   order_post,
+				   order_address,
+				   address_detail,
+				   address_ref,
+				   order_phone,
+				   delivery_msg,
+				   order_price,
+				   add_price,
+				   used_points,
+				   order_status,
+				   pay_status,
+				   cs_status,
+				   admin_memo,
+				   delivery_company,
+				   shipping_number,
+				   shipping_date,
+				   delivery_status,
+				   coupon_issue_num,
+				   detail_price
+			  from orders
+			  join (select order_no, sum(detail_price) detail_price
+					from order_detail
+	                group by order_no
+	                having order_no = #{orderNo}) using (order_no)
+			 where order_no = #{orderNo}) o on (o.coupon_issue_num = c.coupon_issue_num)
+	</select>
+	 
+	<!-- [사용자] 도서 상세 주문 리스트 조회 (연지) -->
+	<select id="selectOrderList" resultMap="orderDetailResult">
+		select order_no,
+			   o.bk_no,
+			   quantity,
+			   detail_price,
+			   detail_status,
+			   bk_title,
+			   writer_name,
+			   intro_changename
+		  from order_detail o
+		  join book b on (o.bk_no = b.bk_no)
+		 where order_no = #{orderNo}
+	</select>
+	
+	<!-- [관리자] '주문확인'인 주문 개수 조회 (한진) -->
+	<select id="selectConfirmCnt" resultType="_int">
+		select count(*)
+		  from orders
+		 where order_status = '주문확인'
+	</select>
+	
+	<!-- [관리자] '상품준비중'인 주문 개수 조회 (한진) -->
+	<select id="selectProductReadyCnt" resultType="_int">
+		select count(*)
+		  from orders
+		 where order_status = '상품준비중'
+	</select>
+	
+	<!-- [관리자] '배송준비중'인 주문 개수 조회 (한진) -->
+	<select id="selectDeliveryReadyCnt" resultType="_int">
+		select count(*)
+		  from orders
+		 where order_status = '배송준비중'
+	</select>
+	
+	<!-- [관리자] '배송중'인 주문 개수 조회 (한진) -->
+	<select id="selectDeliveryCnt" resultType="_int">
+		select count(*)
+		  from orders
+		 where order_status = '배송중'
+	</select>
+	
+	<!-- [관리자] '배송완료'인 주문 개수 조회 (한진) -->
+	<select id="selectFinishCnt" resultType="_int">
+		select count(*)
+		  from orders
+		 where order_status = '배송완료'
+	</select>
+	
+	<!-- [관리자] 검색조건에 일치하는 주문 개수 조회 (한진) -->
+	<select id="selectAdminOListSearchCount" resultType="_int">
+		select
+			   count(*)
+		  from orders
+		  join members using(mem_no)
+		 where order_no > 0
+		<choose>
+		 	<when test="orStatus == 1">
+		 		and order_status = '주문확인'
+		 	</when> 
+		 	<when test="orStatus == 2">
+		 		and order_status = '상품준비중'
+		 	</when>	
+		 	<when test="orStatus == 3">
+		 		and order_status = '배송준비중'
+		 	</when>
+		 	<when test="orStatus == 4">
+		 		and order_status = '배송중'
+		 	</when>
+		 	<when test="orStatus == 5">
+		 		and order_status = '배송완료'
+		 	</when>
+		 </choose>
+		<choose>
+			<when test="condition == 'searchAll'">
+				and (order_no like '%' || #{keyword} || '%'
+				   or mem_name like '%' || #{keyword} || '%'
+				   or mem_id like '%' || #{keyword} || '%')
+			</when>
+			<when test="condition == 'orderNo'">
+				  and order_no like '%' || #{keyword} || '%'
+			</when>		
+			<when test="condition == 'memName'">
+				  and mem_name like '%' || #{keyword} || '%'
+			</when>
+			<when test="condition == 'memId'">
+				  and mem_id like '%' || #{keyword} || '%'
+			</when>
+		</choose>
+	</select>
+	
+	<!-- [관리자] 검색 조건에 일치하는 주문 목록 조회 (한진) -->
+	<select id="selectAdminOrderSearchList" resultMap="orderResult">
+		select
+		       O.order_no,
+		       M.mem_name,
+		       M.mem_id,
+		       regexp_replace(reverse(regexp_replace(reverse(to_char(P.price)), '([0-9]{3})','\1,')),'^,','') as "order_price_comma",
+		       O.order_date,
+		       O.order_status,
+		       O.cs_status,
+		       O.delivery_company,
+		       O.shipping_number,
+		       O.shipping_date,
+		       O.delivery_status,
+		       O.product_status,
+		       O.delivery_msg,
+		       O.admin_memo,
+		       bk_title || decode(A."quantity", 1, null, ' 외 ' || to_char(A."quantity" - 1) || '권') as "bk_title"
+		  from (
+		         select
+		                order_no "order_no",
+		                min (bk_no) "bk_no",
+		                sum(quantity) "quantity"
+		           from order_detail
+		          group by order_no
+		        )A,
+		        orders O,
+		        book B,
+		        Members M,
+		        payment P
+		  where A."bk_no" = B.bk_no
+		    and A."order_no" = O.order_no
+		    and M.mem_no = O.mem_no
+		    and O.pay_no = P.pay_no
+		  <choose>
+		 	<when test="orStatus == 1">
+		 		and order_status = '주문확인'
+		 	</when> 
+		 	<when test="orStatus == 2">
+		 		and order_status = '상품준비중'
+		 	</when>	
+		 	<when test="orStatus == 3">
+		 		and order_status = '배송준비중'
+		 	</when>
+		 	<when test="orStatus == 4">
+		 		and order_status = '배송중'
+		 	</when>
+		 	<when test="orStatus == 5">
+		 		and order_status = '배송완료'
+		 	</when>
+		 </choose>
+		 <choose>
+			<when test="condition == 'searchAll'">
+				and (order_no like '%' || #{keyword} || '%'
+				   or mem_name like '%' || #{keyword} || '%'
+				   or mem_id like '%' || #{keyword} || '%')
+			</when>
+			<when test="condition == 'orderNo'">
+				  and order_no like '%' || #{keyword} || '%'
+			</when>		
+			<when test="condition == 'memName'">
+				  and mem_name like '%' || #{keyword} || '%'
+			</when>
+			<when test="condition == 'memId'">
+				  and mem_id like '%' || #{keyword} || '%'
+			</when>
+		</choose>
+		 order
+		    by 
+		 <choose>
+		 	<when test="array == 0">
+		 		order_date desc
+		 	</when> 
+		 	<when test="array == 1">
+		 		order_date asc
+		 	</when>	
+		 </choose> 
+	</select>
+	
+	<!-- [관리자] 관리자 메모 등록/수정 (한진) -->
+	<update id="updateAdminMemo">
+		update
+		       orders
+		   set admin_memo = #{adminMemo}
+		 where order_no = #{orderNo} 
+	</update>
+	
+	<!-- [관리자] 관리자 메모 삭제 (한진) -->
+	<update id="deleteAdminMemo">
+		update orders
+  		   set admin_memo = null
+		 where order_no = #{orderNo}
+	</update>
+	
+	<!-- [관리자] 주문 상세 조회 - 주문 내역 조회(한진) -->
+	<select id="selectAdminOrderDetail" resultMap="orderResult">
+		select 
+		       order_no,
+		       mem_no,
+		       pay_no,
+		       regexp_replace(reverse(regexp_replace(reverse(to_char(P.price)), '([0-9]{3})','\1,')),'^,','') as "order_price_comma",
+		       order_date,
+		       order_receiver,
+		       order_post,
+		       order_address,
+		       address_detail,
+		       address_ref,
+		       order_phone,
+		       delivery_msg,
+		       order_price,
+		       add_price,
+		       used_points,
+		       order_status,
+		       cs_status,
+		       admin_memo,
+		       product_status,
+		       delivery_company,
+		       shipping_number,
+		       shipping_date,
+		       delivery_status,
+		       coupon_issue_num
+		  from orders
+		  join payment P using (pay_no)
+		 where order_no = #{orderNo}		
+	</select>
+	
+	<!-- [관리자] 주문 상세 조회 - 주문 도서 내역 조회 (한진) -->
+	<select id="selectAdminOrderedBook" resultMap="orderDetailResult">
+		select
+		       order_no,
+		       bk_no,
+		       bk_title,
+		       bk_publish,
+		       writer_name,
+		       quantity,
+		       detail_price
+		  from order_detail
+		  join book using (bk_no)
+	     where order_no = #{orderNo}
+	</select>
+		
+	<!-- [관리자] 주문 배송지 변경 (한진) -->
+	<update id="updateAdminAddress">
+		update
+		       orders
+		   set order_post = #{orderPost},
+		       order_address = #{orderAddress},
+		       address_detail = #{addressDetail},
+		       address_ref = #{addressRef}
+		 where order_no = #{orderNo} 
+	</update>
+	
+	<!-- [관리자] 주문 상태 변경 (한진) -->
+	<update id="updateAdminOrderConfirm">
+		update
+		       orders
+		   set
+		   <choose>
+		   		<when test="odStatus == 1">
+		   			order_status = '상품준비중'
+		   		</when>
+		   		<when test="odStatus == 2">
+		   			order_status = '주문취소',
+		   			cs_status = '취소신청'
+		   		</when>
+		   		<when test="odStatus == 3">
+		   			order_status = '배송준비중'
+		   		</when>
+		   		<when test="odStatus == 31">
+		   			product_status = '준비완료'
+		   		</when>
+		   		<when test="odStatus == 32">
+		   			product_status = '준비중'
+		   		</when>
+		   		<when test="odStatus == 4">
+		   			order_status = '배송중'
+		   		</when>
+		   		<when test="odStatus == 41">
+		   			delivery_status = '준비완료'
+		   		</when>
+		   		<when test="odStatus == 42">
+		   			delivery_status = '준비중'
+		   		</when>
+		   		<when test="odStatus == 5">
+		   			order_status = '배송완료'
+		   		</when>
+		   		<when test="odStatus == 6">
+		   			order_status = '반품신청',
+		   			cs_status = '반품신청'
+		   		</when>
+		   </choose>
+		 where order_no = #{odNo}
+	</update>
+	
+	<!-- [관리자] 주문 취소 테이블 insert (한진) -->
+	<insert id="insertAdminCancel">
+		insert
+		  into cancel
+	    values
+	         (
+	           seq_cancelno.nextval,
+	           #{odNo},
+	           '사용자 요청에 의한 취소',
+	           sysdate,
+	           '취소신청',
+	           null
+	         )
+	</insert>
+	
+	<!-- [관리자] 반품 테이블 insert (한진) -->
+	<insert id="insertAdminReturn">
+		insert
+		  into return
+	    values
+	         (
+	           seq_returnno.nextval,
+	           #{odNo},
+	           '사용자 요청에 의한 반품',
+	           sysdate,
+	           '반품신청',
+	           null
+	         )
+	</insert>
+	
+	<!-- [관리자] 운송장정보 등록/저장 (한진) -->
+	<update id="updateDeliveryInfo">
+	 	update
+	 	       orders
+	 	   set delivery_company = #{deliveryCompany},
+	 	       shipping_number = #{shippingNumber}
+	 	 where order_no = #{orderNo}
+	</update>
+	
+	<!-- [사용자] 마이페이지 초기 나의 주문 리스트 카운트 조회(세아)-->
+	<select id="selectMyOrderListCount" resultType="_int">
+		select count(*) from(
+		       select O.order_no
+		  from (
+		         select
+		                order_no "order_no",
+		                min (bk_no) "bk_no",
+		                sum(quantity) "quantity"
+		           from order_detail
+		          group by order_no
+		        )A,
+		        orders O,
+		        book B,
+		        Members M,
+		        payment P
+		  where A."bk_no" = B.bk_no
+		    and A."order_no" = O.order_no
+		    and M.mem_no = O.mem_no
+		    and O.pay_no = P.pay_no
+            and O.mem_no = #{memNo}
+            and O.order_date between TO_DATE(#{beginDate},'YYYY-MM-DD') and TO_DATE(#{endDate},'YYYY-MM-DD')
+            <choose>
+		 		<when test="orderStatus == '주문확인'">
+		   			and order_status = '주문확인'
+				</when>
+				<when test="orderStatus == '결제완료'">
+					and order_status = '결제완료'
+				</when>
+				<when test="orderStatus == '주문취소'">
+					and order_status = '주문취소'
+				</when>
+				<when test="orderStatus == '상품준비중'">
+					and order_status = '상품준비중'
+				</when>
+				<when test="orderStatus == '배송준비중'">
+					and order_status = '배송준비중'
+				</when>
+				<when test="orderStatus == '배송중'">
+					and order_status = '배송중'
+				</when>
+				<when test="orderStatus == '배송완료'">
+					and order_status = '배송완료'
+				</when>
+				<when test="orderStatus == '반품'">
+					and order_status = '반품'
+				</when>
+			</choose>
+			)
+	</select>
+	
+	<!-- [사용자] 마이페이지 초기 나의 주문 리스트 조회(세아)-->
+	<select id="selectMyOrderList" resultMap="orderResult">
+		select
+               O.mem_no,
+		       O.order_no,
+		       regexp_replace(reverse(regexp_replace(reverse(to_char(P.price)), '([0-9]{3})','\1,')),'^,','') as "order_price_comma",
+		       O.order_date,
+		       O.order_status,
+		       bk_title || decode(A."quantity", 1, null, ' 외 ' || to_char(A."quantity" - 1) || '권') as "bk_title"
+		  from (
+		         select
+		                order_no "order_no",
+		                min(bk_no) "bk_no",
+		                sum(quantity) "quantity"
+		           from order_detail
+		          group by order_no
+		        )A,
+		        orders O,
+		        book B,
+		        Members M,
+		        payment P
+		  where A."bk_no" = B.bk_no
+		    and A."order_no" = O.order_no
+		    and M.mem_no = O.mem_no
+		    and O.pay_no = P.pay_no
+            and O.mem_no = #{memNo}
+            and O.order_date between TO_DATE(#{beginDate},'YYYY-MM-DD') and TO_DATE(#{endDate},'YYYY-MM-DD')
+            <choose>
+		 		<when test="orderStatus == '주문확인'">
+		   			and order_status = '주문확인'
+				</when>
+				<when test="orderStatus == '결제완료'">
+					and order_status = '결제완료'
+				</when>
+				<when test="orderStatus == '주문취소'">
+					and order_status = '주문취소'
+				</when>
+				<when test="orderStatus == '상품준비중'">
+					and order_status = '상품준비중'
+				</when>
+				<when test="orderStatus == '배송준비중'">
+					and order_status = '배송준비중'
+				</when>
+				<when test="orderStatus == '배송중'">
+					and order_status = '배송중'
+				</when>
+				<when test="orderStatus == '배송완료'">
+					and order_status = '배송완료'
+				</when>
+				<when test="orderStatus == '반품'">
+					and order_status = '반품'
+				</when>
+			</choose>
+			order by order_date desc
+	</select>
+	
+	<!-- [사용자] 마이페이지 주문 상세 리스트 조회 구버전(세아) -->
+	<!--  <select id="selectMyOrderDetailList" resultMap="orderDetailResult">
+		select order_no,
+       		bk_no,
+       		bk_title,
+       		quantity,
+       		detail_price,
+       		detail_status
+		from order_detail
+		join book using(bk_no)
+		where order_no = #{orderNo}
+	</select>-->
+	
+	<!-- [사용자] 마이페이지 주문 상세 리스트 조회 신버전(세아) -->
+	<select id="selectMyOrderDetailList" resultMap="orderDetailResult">
+		select o.order_no,
+       		od.bk_no,
+       		bk_title,
+       		quantity,
+       		detail_price,
+       		detail_status,
+            nvl(g.grade_star,0) grade_star
+		from order_detail od
+		join book b on b.bk_no = od.bk_no
+        join orders o on o.order_no = od.order_no
+        join members m on o.mem_no = m.mem_no
+        left join grade g on m.mem_no = g.mem_no and b.bk_no = g.bk_no
+		where od.order_no = #{orderNo}
+	</select>
+	
+	<!-- [사용자] 마이페이지 주문 상세 책의 총 개수 조회(세아) -->
+	<select id="selectMyOrderDeatilQuantity" resultType="_int">
+		select 
+       		sum(quantity)
+		from order_detail
+		where order_no = #{orderNo}
+	</select>
+	
+	<!-- [사용자] 마이페이지 주문 상태 변경(세아) -->
+	<update id="updateMyOrderDelivered">
+		update
+			orders
+		set order_status='배송완료'
+		where order_no = #{orderNo}
+	</update>
+	
+	<!-- [사용자] 마이페이지 주문 상세 상태 변경(세아) -->
+	<update id="updateMyOrderDetailDelivered">
+		update
+			order_detail
+		set detail_status='배송완료'
+		where order_no = #{orderNo}
+	</update>
+	
+	<!-- [사용자] 주문 도서 조회 (연지) -->
+	<select id="selectOrderBook" resultMap="bookResult">
+		select  
+		       bk_no,
+		       sub_cate_no,
+		       bk_title,
+		       bk_publish,
+		       bk_date,
+		       bk_price,
+		       intro_originname,
+		       intro_changename,
+		       bk_stock,
+		       bk_seldate,
+		       bk_mdate,
+		       bk_selstatus,
+		       bk_age,
+		       bk_gender,
+		       bk_work,
+		       bk_level,
+		       bk_status,
+		       writer_name,
+		       writer_intro,
+		       writer_origin_name,
+		       writer_change_name,
+		       bk_content,
+		       cart_qty
+		  from cart
+		  join book bk using (bk_no)
+		  where bk_no = #{bkNo}
+		    and mem_no = #{memNo}
+	</select>
+	
+	<!-- [사용자] 주문 정보 입력 (연지) -->
+	<insert id="insertOrderInfo">
+		insert
+		  into orders
+		     ( 
+		       order_no
+		     , mem_no
+		     , pay_no
+		     , order_date
+		     , order_receiver
+		     , order_post
+		     , order_address
+		     , address_detail
+		     , address_ref
+		     , order_phone
+		     , order_price
+		     , add_price
+		     , used_points
+		     , order_status
+		     , pay_status
+		     )
+	    values
+	         (
+	           seq_ono.nextval,
+	           #{memNo},
+	           seq_pno.currval,
+	           sysdate,
+	           #{orderReceiver},
+	           #{orderPost},
+	           #{orderAddress},
+	           #{addressDetail},
+	           #{addressRef},
+	           #{orderPhone},
+	           #{orderPrice},
+	           #{addPrice},
+	           #{usedPoints},
+	           '주문확인',
+	           '입금완료'
+	         )
+	</insert>
+	
+	<!-- [사용자] 주문 상세 정보 입력 (연지) -->
+	<insert id="insertOrderDetailInfo">
+		insert
+		  into order_detail
+	    values
+	         (
+	           seq_ono.currval,
+	           #{bkNo},
+	           #{quantity},
+	           #{detailPrice},
+	           '결제완료'
+	         )
+	</insert>
+	
+	<!-- [사용자] 사용한 포인트 차감 (연지) -->
+	<insert id="insertUsedPoint">
+		insert
+		  into point
+	    values
+	         (
+	           seq_pointno.nextval,
+	           #{memNo},
+	           seq_ono.currval,
+	           null,
+	           '차감',
+	           #{detailPrice} * 0.01,
+	           sysdate
+	         )
+	</insert>
+	
+	<!-- [사용자] 주문 번호 조회 (연지) -->
+	<select id="selectOrderNo" resultType="_int">
+		select seq_ono.currval from dual
+	</select>
+	
+</mapper>

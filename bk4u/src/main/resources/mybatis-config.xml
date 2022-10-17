@@ -1,17 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
 <configuration>
-<settings>
-	<setting name="jdbcTypeForNull" value="NULL"/>
-</settings>
-<typeAliases>
-<typeAlias type="com.kh.bk4u.member.model.vo.Member" alias="Member"/>
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL"/>
+	</settings>
+	
+	<typeAliases>
+		<typeAlias type="com.bookforyou.bk4u.member.model.vo.Member" alias="Member"/>
+		<typeAlias type="com.bookforyou.bk4u.book.model.vo.Book" alias="Book"/>
+		<typeAlias type="com.bookforyou.bk4u.group.model.vo.GroupBoard" alias="GroupBoard"/>
+		<typeAlias type="com.bookforyou.bk4u.group.model.vo.GroupMember" alias="GroupMember"/>
+		<typeAlias type="com.bookforyou.bk4u.meetboard.model.vo.MeetBoard" alias="MeetBoard"/>
+		<typeAlias type="com.bookforyou.bk4u.meet.model.vo.Meet" alias="Meet"/>
+		<typeAlias type="com.bookforyou.bk4u.meet.model.vo.Meet" alias="MeetMember"/>
+		<typeAlias type="com.bookforyou.bk4u.notice.model.vo.Notice" alias="Notice"/>
+		<typeAlias type="com.bookforyou.bk4u.faq.model.vo.Faq" alias="Faq"/>
+		<typeAlias type="com.bookforyou.bk4u.booklist.model.vo.Booklist" alias="Booklist"/>
+		<typeAlias type="com.bookforyou.bk4u.subscription.model.vo.Subscription" alias="Subscription"/>
+		<typeAlias type="com.bookforyou.bk4u.order.model.vo.Order" alias="Order"/>
+		<typeAlias type="com.bookforyou.bk4u.order.model.vo.OrderDetail" alias="OrderDetail"/>
+		<typeAlias type="com.bookforyou.bk4u.member.model.vo.MemberCategory" alias="MemberCategory"/>
+		<typeAlias type="com.bookforyou.bk4u.member.model.vo.MemberInterest" alias="MemberInterest"/>
+		<typeAlias type="com.bookforyou.bk4u.payment.model.vo.Payment" alias="Payment"/>
+		<typeAlias type="com.bookforyou.bk4u.member.model.vo.Coupon" alias="Coupon"/>
+		<typeAlias type="com.bookforyou.bk4u.rental.model.vo.Rental" alias="Rental"/>
+		<typeAlias type="com.bookforyou.bk4u.store.model.vo.Store" alias="Store"/>
+		<typeAlias type="com.bookforyou.bk4u.store.model.vo.StoreBook" alias="StoreBook"/>
+		<typeAlias type="com.bookforyou.bk4u.store.model.vo.OffBook" alias="OffBook"/>
+		<typeAlias type="com.bookforyou.bk4u.couponDetail.model.vo.CouponDetail" alias="CouponDetail"/>
+		<typeAlias type="com.bookforyou.bk4u.cs.model.vo.Cancel" alias="Cancel"/>
+		<typeAlias type="com.bookforyou.bk4u.cs.model.vo.Refund" alias="Refund"/>
+		<typeAlias type="com.bookforyou.bk4u.cs.model.vo.Return" alias="Return"/>
+		<typeAlias type="com.bookforyou.bk4u.reply.model.vo.Reply" alias="Reply"/>
+		<typeAlias type="com.bookforyou.bk4u.mypage.model.vo.MyList" alias="MyList"/>
+		<typeAlias type="com.bookforyou.bk4u.qa.model.vo.Qa" alias="Qa"/>
+		<typeAlias type="com.bookforyou.bk4u.qa.model.vo.As" alias="As"/>
+		<typeAlias type="com.bookforyou.bk4u.board.model.vo.Board" alias="Board"/>
+		<typeAlias type="com.bookforyou.bk4u.point.model.vo.Point" alias="Point"/>
+		<typeAlias type="com.bookforyou.bk4u.report.model.vo.Report" alias="Report"/>
+		<typeAlias type="com.bookforyou.bk4u.report.model.vo.ReportList" alias="ReportList"/>
+		<typeAlias type="com.bookforyou.bk4u.sales.model.vo.Sales" alias="Sales"/>
+		<typeAlias type="com.bookforyou.bk4u.member.model.vo.MemberPhonebook" alias="MemberPhonebook"/>
+		<typeAlias type="com.bookforyou.bk4u.like.model.vo.Like" alias="Like"/>
+	</typeAliases>
 
-
-</typeAliases>
-
-<mappers>
-	<mapper resource="/mappers/member-mapper.xml"/>
-</mappers>
+	<mappers>
+		<mapper resource="/mappers/member-mapper.xml"/>
+		<mapper resource="/mappers/book-mapper.xml"/>
+		<mapper resource="/mappers/group-mapper.xml"/>
+		<mapper resource="/mappers/notice-mapper.xml"/>
+		<mapper resource="/mappers/booklist-mapper.xml"/>
+		<mapper resource="/mappers/subscription-mapper.xml"/>
+		<mapper resource="/mappers/order-mapper.xml"/>
+		<mapper resource="/mappers/mypage-mapper.xml"/>
+		<mapper resource="/mappers/payment-mapper.xml"/>
+		<mapper resource="/mappers/rental-mapper.xml"/>
+		<mapper resource="/mappers/coupon-mapper.xml"/>
+		<mapper resource="/mappers/cs-mapper.xml"/>
+		<mapper resource="/mappers/store-mapper.xml"/>
+		<mapper resource="/mappers/qa-mapper.xml"/>
+		<mapper resource="/mappers/point-mapper.xml"/>
+		<mapper resource="/mappers/board-mapper.xml"/>
+		<mapper resource="/mappers/report-mapper.xml"/>	
+		<mapper resource="/mappers/sales-mapper.xml"/>	
+		<mapper resource="/mappers/faq-mapper.xml"/>
+	</mappers>
 
 </configuration>

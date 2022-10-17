@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="storeMapper">
+
+	<resultMap id="storeResult" type="Store">
+		<result column="store_no" property="storeNo"/>
+		<result column="store_name" property="storeName"/>
+		<result column="store_address" property="storeAddress"/>
+		<result column="store_closed" property="storeClosed"/>
+		<result column="store_open" property="storeOpen"/>
+		<result column="store_phone" property="storePhone"/>
+		<result column="store_status" property="storeStatus"/>
+	</resultMap>
+
+	<resultMap id="offBookResult" type="OffBook">
+		<result column="bk_no" property="bkNo"/>
+		<result column="store_no" property="storeNo"/>
+		<result column="bk_status" property="bkStatus"/>
+		<result column="bk_lct" property="bkLct"/>
+		<result column="add_date" property="addDate"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="bk_publish" property="bkPublish"/>
+		<result column="writer_name" property="writerName"/>
+		<result column="intro_originname" property="introOriginName"/>
+		<result column="intro_changename" property="introChangeName"/>
+		<result column="bk_content" property="bkContent"/>
+		<result column="store_name" property="storeName"/>
+	</resultMap>
+	
+	<resultMap id="storeBookResult" type="StoreBook">
+		<result column="BK_NO" property="bookNo"/>
+		<result column="STORE_NO" property="storeNo"/>
+		<result column="BK_TITLE" property="bookTitle"/>
+		<result column="WRITER_NAME" property="bookAuthor"/>
+		<result column="BK_PUBLISH" property="bookPubl"/>
+		<result column="BK_DATE" property="bookDate"/>
+		<result column="BK_STATUS" property="bookStatus"/>	
+	</resultMap>
+
+	<!-- [공통] 오프라인 매장 상세 조회 (연지) -->
+	<select id="selectStoreDetail" resultMap="storeResult">
+		select 
+			   store_no,
+			   store_name,
+			   store_address,
+			   store_closed,
+			   store_open,
+			   store_phone,
+			   store_status
+		  from store
+		 where store_no = #{storeNo}
+		   and store_status = 'Y'
+	</select>
+
+	<!-- [공통] 오프라인 매장 도서 조회 (연지) -->
+	<select id="selectStoreOffBookList" resultMap="offBookResult">
+		select 
+			   ob.bk_no,
+			   store_no,
+			   ob.bk_status,
+			   bk_lct,
+			   add_date,
+			   bk_title,
+			   bk_publish,
+		       intro_originname,
+		       intro_changename,
+			   writer_name
+		  from off_book ob
+		  join book b on (ob.bk_no = b.bk_no)
+		 where store_no = #{storeNo}
+	</select>
+
+	<!-- [공통] 오프라인 매장 최근 추가 도서 조회 (연지) -->
+	<select id="selectStoreOffBookListRecent" resultMap="offBookResult">
+		select 
+			   ob.bk_no,
+			   store_no,
+			   ob.bk_status,
+			   bk_lct,
+			   add_date,
+			   bk_title,
+			   bk_publish,
+		       intro_originname,
+		       intro_changename,
+			   writer_name
+		  from off_book ob
+		  join book b on (ob.bk_no = b.bk_no)
+		 where store_no = #{storeNo}
+	  order by add_date
+	</select>
+	
+	<!-- [공통] 오프라인 매장 도서 상세 조회 (연지) -->
+	<select id="selectOffBook" resultMap="offBookResult">
+		select 
+			   ob.bk_no,
+			   ob.store_no,
+			   ob.bk_status,
+			   bk_lct,
+			   add_date,
+			   bk_title,
+			   bk_publish,
+		       intro_originname,
+		       intro_changename,
+			   writer_name,
+			   store_name
+		  from off_book ob
+		  join book b on (ob.bk_no = b.bk_no)
+		  join store s on (ob.store_no = s.store_no)
+		 where ob.bk_no = #{bkNo}
+		   and ob.store_no = #{storeNo}
+	</select>
+
+	<!-- [공통] 도서 보유 오프라인 매장 리스트 조회 (연지) -->
+	<select id="selectOffBookStoreList" resultMap="offBookResult">
+		select store_no,
+			   bk_status,
+		       store_name
+		from off_book
+		join store using (store_no)
+		where bk_no = #{bkNo}
+	</select>
+	
+	<!-- [공통] 오프라인 도서 검색 결과 개수 조회 (연지) -->
+	<!-- 
+	<select id="selectSearchBookCount" resultType="_int">
+		select count(*)
+		
+		<choose>
+		 	<when test="condition == 'offStore'">
+		        from (select bk_no
+		                from off_book
+		                where bk_no in (select bk_no
+		                                from book
+		                                where bk_title like '%' || #{keyword} || '%')
+		                group by bk_no)
+		 	</when>
+		 	<otherwise>
+		        select count(*)
+		        from off_book
+		        where store_no in (select store_no
+		                            from store
+		                            where store_name like '%' || #{keyword} || '%')
+	 		</otherwise>
+		 </choose>
+	</select>
+	 -->
+	
+	<!-- [공통] 오프라인 도서 검색 결과 개수 조회 (연지) -->
+	<select id="selectSearchOffBookCount" resultType="_int">
+		select count(*)
+		  from (select bk_no, store_no, bk_title
+			    from off_book
+			    join book using (bk_no) 
+		 		where store_no = #{condition}) b
+ 		 where bk_title like '%' || #{keyword} || '%'
+	</select>
+	
+	<!-- [공통] 도서 검색 결과 리스트 조회 (연지) -->
+	<!-- 
+	<select id="selectSearchBook" resultMap="offBookResult">
+		select
+		       bk.bk_no
+		     , bk_title
+		     , bk_publish
+		     , bk_date
+		     , intro_originname
+		     , intro_changename
+		     , writer_name
+		     , bk_content
+             , ob.store_no
+             , ob.bk_status
+		  from book bk
+          join (select bk_no, store_no, bk_status
+                from off_book
+                where store_no = (select store_no
+                                  from store
+                                  where store_name like '%' || #{keyword} || '%')) ob on (bk.bk_no = ob.bk_no)
+          where bk.bk_no in (select bk_no
+                          from off_book
+                          where store_no = (select store_no
+                                            from store
+                                            where store_name like '%' || #{keyword} || '%'))
+	</select>
+	 -->
+	
+	<!-- [공통] 도서 검색 결과 리스트 조회 (연지) -->
+	<select id="selectSearchOffBook" resultMap="offBookResult">
+		select 
+		       bk.bk_no
+		     , bk_title
+		     , bk_publish
+		     , bk_date
+		     , intro_originname
+		     , intro_changename
+		     , writer_name
+		     , bk_content
+             , ob.store_no
+             , ob.bk_status
+		  from (select bk_no, store_no, ob.bk_status
+			    from off_book ob
+			    join book bk using (bk_no) 
+		 		where store_no = #{condition}) ob
+          join book bk on (ob.bk_no = bk.bk_no)
+ 		 where bk_title like '%' || #{keyword} || '%'
+	</select>
+	
+	
+	<!-- [관리자] 김현솔 -->
+	<select id="selectListCount" resultType="_int">
+		select
+		       count(*)
+		  from store	
+	</select>
+	
+	<select id="selectSearchListCount" resultType="_int">
+		select
+		       count(*)
+		  from store	
+		 where store_no >=1 
+		 	<choose>
+	 		<when test="type == 'storeName'">
+	 			and store_name
+	 		</when>
+	 		<when test="type == 'storeAddress'">
+	 			and store_address
+	 		</when>
+	 		<when test="type == 'all'">
+	 			and store_name like '%' || #{keyword} || '%' or store_address like '%' || #{keyword} || '%' or store_phone
+	 		</when>
+	 		<otherwise>
+	 			and store_phone
+	 		</otherwise>
+	 	</choose>
+	 	like '%' || #{keyword} || '%'
+	</select>
+	
+	
+	<select id="selectBookListCount" resultType="_int">
+		select
+		       count(*)
+		  from off_book
+		  where store_no = #{storeNo}	
+	</select>
+	
+	
+	
+	<select id="selectStoreList" resultMap="storeResult">
+		select 
+			   STORE_NO,
+			   STORE_NAME,
+			   STORE_ADDRESS,
+			   STORE_CLOSED,
+			   STORE_OPEN,
+			   STORE_PHONE,
+			   STORE_STATUS
+		      
+		  from store	
+		 
+		 order
+		    by store_no desc
+	</select>
+	
+		<select id="selectSearchStoreList" resultMap="storeResult">
+		select 
+			   STORE_NO,
+			   STORE_NAME,
+			   STORE_ADDRESS,
+			   STORE_CLOSED,
+			   STORE_OPEN,
+			   STORE_PHONE,
+			   STORE_STATUS
+		      
+		  from store	
+		where store_no >=1 
+		 	<choose>
+	 		<when test="type == 'storeName'">
+	 			and store_name
+	 		</when>
+	 		<when test="type == 'storeAddress'">
+	 			and store_address
+	 		</when>
+	 		<when test="type == 'all'">
+	 			and store_name like '%' || #{keyword} || '%' or store_address like '%' || #{keyword} || '%' or store_phone
+	 		</when>
+	 		<otherwise>
+	 			and store_phone
+	 		</otherwise>
+	 	</choose>
+	 	like '%' || #{keyword} || '%'
+	 	
+	 	 order
+		    by store_no desc  
+	</select>
+	
+	
+	<select id="selectStoreBookList" resultMap="storeBookResult">
+		   select 
+			   BK_NO,	
+			   STORE_NO,
+			   BK_TITLE,
+			   BK_PUBLISH,
+			   bk_date,				  
+			   WRITER_NAME,
+			   A.BK_STATUS
+			   
+		      
+		  from off_book  A   join store B using(store_no)
+           join book C using(bk_no)
+		  
+		  where store_no = #{storeNo}
+	</select>
+	<insert id="addStore">
+		insert into
+		store(STORE_NO,STORE_NAME,STORE_ADDRESS,STORE_CLOSED,STORE_OPEN,STORE_PHONE)
+		values(seq_store_no.nextval,#{storeName},#{storeAddress},#{storeClosed},#{storeOpen},#{storePhone})
+		
+	</insert>
+	
+	<update id="updateStore">
+		update store
+		set STORE_NAME=#{storeName}, 
+			STORE_ADDRESS=#{storeAddress},
+			STORE_CLOSED=#{storeClosed},
+			STORE_OPEN=#{storeOpen},
+			STORE_PHONE=#{storePhone}
+			
+		where store_no = #{storeNo} 
+	</update>
+	
+	<delete id="deleteStore">
+		delete from store
+		where store_no=#{storeNo}
+	</delete>
+	
+	<!-- [관리자] 지점별 도서 상세 조회 (한진) -->
+	<select id="selctStoreBookDetail" resultMap="offBookResult">
+		select
+		       bk_no,
+		       store_no,
+		       bk_status,
+		       bk_lct,
+		       add_date
+		  from off_book
+		 where store_no = #{storeNo}
+		   and bk_no = #{bkNo}
+	</select>
+	
+	<!-- [관리자] 지점별 도서 삭제 (한진) -->
+	<delete id="deleteStoreBook">
+		delete
+		  from off_book
+		 where store_no = #{storeNo}
+		   and bk_no = #{bkNo}
+	</delete>
+	
+</mapper>

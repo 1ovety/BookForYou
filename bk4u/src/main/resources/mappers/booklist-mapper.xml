@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="booklistMapper">
+
+	<resultMap id="booklistResult" type="Booklist">
+		<result column="bl_no" property="blNo"/>
+		<result column="mem_no" property="memNo"/>
+		<result column="mem_nickname" property="blWriter"/>
+		<result column="bl_title" property="blTitle"/>
+		<result column="bl_content" property="blContent"/>
+		<result column="bl_count" property="blCount"/>
+		<result column="bl_rate" property="blRate"/>
+		<result column="bl_cdate" property="blCdate"/>
+		<result column="bl_mdate" property="blMdate"/>
+		<result column="bl_like" property="blLike"/>
+		<result column="bl_scrap" property="blScrap"/>
+		<result column="bk_no" property="bkNo"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="bk_publish" property="bkPublish"/>
+		<result column="writer_name" property="writerName"/>
+		<result column="rank" property="rank"/>
+		<result column="change_img_name" property="changeImgName"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="bk_publish" property="bkPublish"/>
+		<result column="writer_name" property="writerName"/>
+		<result column="intro_changename" property="introChangeName"/>
+	</resultMap>
+	
+	<resultMap id="bookResult" type="Book">
+		<result column="bk_no" property="bkNo"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="writer_name" property="writerName"/>
+		<result column="intro_originname" property="introOriginName"/>
+		<result column="intro_changename" property="introChangeName"/>
+		<result column="bk_introduce" property="bkIntroduce"/>
+	</resultMap>
+	
+	<resultMap id="replyResult" type="Reply">
+		<result column="reply_no" property="replyNo"/>
+		<result column="mem_no" property="memNo"/>
+		<result column="mem_nickname" property="reWriter"/>
+		<result column="reply_type" property="replyType"/>
+		<result column="ref_post" property="refPost"/>
+		<result column="reply_content" property="replyContent"/>
+		<result column="reply_cdate" property="replyCdate"/>
+		<result column="reply_mdate" property="replyMdate"/>
+		<result column="delete_status" property="deleteStatus"/>
+		<result column="reply_refNo" property="replyRefNo"/>
+		<result column="depth" property="depth"/>
+	</resultMap>
+	
+	<resultMap id="likeResult" type="Like">
+		<result column="mem_no" property="memNo"/>
+		<result column="like_type" property="likeType"/>
+		<result column="ref_post" property="refPost"/>
+		<result column="like_date" property="likeDate"/>
+	</resultMap>
+
+	<!-- 독서록 게시글 갯수 조회용 -->
+	<!-- @author daeunlee -->
+	<select id="selectListCount" resultType="_int">
+		select count(*)
+		  from booklist
+		 where bl_status='Y'
+	</select>
+	
+	<!-- 독서록 리스트 조회용 + 페이징 -->
+	<!-- @author daeunlee -->
+	<select id="selectList" resultMap="booklistResult">
+		select 
+		       bl_no
+		     , mem_nickname
+		     , bk_no
+		     , bk_title
+		     , bk_publish
+		     , writer_name
+		     , bl_title
+		     , bl_content
+		     , bl_count
+		     , bl_rate
+		     , bl_cdate
+		     , bl_mdate
+		     , bl_like
+		     , bl_scrap
+		  from booklist
+		  join members using(mem_no)
+		  join book using(bk_no)
+		 where bl_status='Y'
+		 order
+		    by bl_no desc
+	</select>
+	
+	<!-- 독서록 작성용 -->
+	<!-- @author daeunlee -->
+	<insert id="insertBooklist">
+		insert 
+		  into booklist
+		     (
+		       bl_no
+		     , mem_no
+		     , bk_no
+		     , bl_title
+		     , bl_content
+		     , bl_rate
+		     , bl_cdate
+		     )
+		values
+		     (
+		       seq_blno.nextval
+		     , #{memNo}
+		     , #{bkNo}
+		     , #{blTitle}
+		     , #{blContent}
+		     , #{blRate}
+		     , SYSDATE
+		     )
+	</insert>
+	
+	<!-- 도서 검색 모달창: 도서 조회용 -->
+	<!-- @author daeunlee -->
+	<select id="selectBookSearchList" resultMap="bookResult">
+		select
+		       bk_no
+             , bk_title
+             , writer_name
+             , intro_originname
+             , intro_changename
+             , bk_introduce
+		  from book
+		 where bk_selstatus = 'Y'
+	 	<choose>
+	 		<when test="condition == 'bkTitle'">
+	 			and bk_title
+	 		</when>
+	 		<otherwise>
+	 			and writer_name
+	 		</otherwise>
+	 	</choose>
+	 	       like '%' || #{keyword} || '%'	
+	</select>
+	
+	<!-- 독서록 상세조회용 : 조회수 증가 -->
+	<!-- @author daeunlee -->
+	<update id="increaseCount">
+		update 
+		       booklist
+		   set bl_count = bl_count+1
+		 where bl_no = #{blNo}
+		   and bl_status='Y'
+	</update>
+	
+	<!-- 독서록 상세조회용 : 해당게시글 조회 -->
+	<!-- @author daeunlee -->
+	<select id="selectBooklist" resultMap="booklistResult">
+		select 
+		       bl_no
+		     , mem_nickname
+		     , bl_title
+		     , bl_content
+		     , bl_count
+		     , bl_rate
+		     , bl_cdate
+		     , bl_mdate
+		     , bl_like
+		     , bl_scrap
+		     , bk_no
+		  from booklist
+		  join members using(mem_no)
+		 where bl_no = #{blNo}
+		   and bl_status='Y'
+	</select>
+	
+	<!-- 독서록 상세조회용 : 해당 게시글의 책정보 조회 -->
+	<!-- @author daeunlee -->
+	<select id="selectBook" resultMap="bookResult">
+		select 
+		       bk_no
+		     , bk_title
+		     , writer_name
+		     , bk_introduce
+		     , intro_changename
+		  from booklist
+		  join book using(bk_no)		  
+		 where bl_no = #{blNo}
+		   and bl_status='Y'
+	</select>
+	
+	<!-- 댓글 리스트 조회 -->
+	<!-- @author daeunlee -->
+	<select id="selectReplyList" resultMap="replyResult">
+		select 
+		       reply_no
+		     , mem_no
+		     , reply_type
+		     , ref_post
+		     , reply_content
+		     , reply_cdate
+		     , reply_mdate
+		     , delete_status
+		     , reply_refNo
+		     , depth
+		  from reply
+		  join members using(mem_no)
+		 where reply_type = 2
+		   and ref_post = #{blNo}
+		 start with reply_refno = 0
+		connect by prior reply_no = reply_refno
+		order siblings by reply_cdate desc
+	</select>
+	
+	<!-- 댓글 작성 -->
+	<!-- @author daeunlee -->
+	<insert id="insertReply">
+		insert 
+		  into reply
+		     ( 
+		       reply_no
+		     , mem_no
+		     , reply_type
+		     , ref_post
+		     , reply_content
+		     , reply_refno
+		     , depth
+		     )
+		values
+		     ( 
+		       seq_rno.nextval
+		     , #{memNo}
+		     , 2
+		     , #{refPost}
+		     , #{replyContent}
+		     , #{replyRefNo}
+		     , #{depth}
+		     )
+	</insert>
+	
+	<!-- 독서록 수정 -->
+	<!-- @author daeunlee -->
+	<update id="updateBooklist">
+		update
+		       booklist
+		   set 
+		       bl_title = #{blTitle}
+		     , bl_content = #{blContent}
+		     , bk_no = #{bkNo}
+		     , bl_rate = #{blRate}
+		     , bl_mdate = SYSDATE
+		 where bl_no = #{blNo}
+	</update>
+	
+	<!-- 독서록 삭제 -->
+	<!-- @author daeunlee -->
+	<update id="deleteBooklist">
+		update
+		       booklist
+		   set bl_status = 'N'
+		 where bl_no = #{blNo}	
+	</update>
+	
+	<!-- 독서록 검색 : 갯수 조회용 -->
+	<!-- @author daeunlee -->
+	<select id="selectSearchListCount" resultType="_int">
+		select
+		       count(*)
+		  from booklist
+		  join members using (mem_no)
+		 where bl_status = 'Y'
+	 	<choose>
+	 		<when test="condition == 'blTitle'">
+	 			and bl_title
+	 		</when>
+	 		<when test="condition == 'writer'"> 
+	 			and mem_nickname	 		
+	 		</when>
+	 		<otherwise>
+	 			and bl_content
+	 		</otherwise>
+	 	</choose>
+	 	       like '%' || #{keyword} || '%'	
+	</select>
+	
+	<!-- 독서록 검색 : 게시글 조회용 -->
+	<!-- @author daeunlee -->
+	<select id="selectBooklistSearchList" resultMap="booklistResult">
+		select 
+		       bl_no
+		     , mem_nickname
+		     , bk_no
+		     , bl_title
+		     , bl_content
+		     , bl_count
+		     , bl_rate
+		     , bl_cdate
+		     , bl_mdate
+		     , bl_like
+		     , bl_scrap
+		  from booklist
+		  join members using(mem_no)
+		 where bl_status = 'Y'
+	 	<choose>
+	 		<when test="condition == 'blTitle'">
+	 			and bl_title
+	 		</when>
+	 		<when test="condition == 'writer'"> 
+	 			and mem_nickname	 		
+	 		</when>
+	 		<otherwise>
+	 			and bl_content
+	 		</otherwise>
+	 	</choose>
+	 	       like '%' || #{keyword} || '%'	
+	</select>
+	
+	<!-- 좋아요 조회용 -->
+	<!-- @author daeunlee -->
+	<select id="selectLikeCount" resultType="_int">
+		SELECT count(*)
+		  FROM "LIKE"
+		 WHERE ref_post = #{refPost}
+		   AND like_type = 1
+		   AND mem_no = #{memNo}
+	</select>
+	
+	<!-- 좋아요 증가용 -->
+	<!-- @author daeunlee -->
+	<insert id="insertLike">
+		INSERT 
+		  INTO "LIKE"
+		     (
+		       mem_no
+		     , like_type
+		     , ref_post
+		     , like_date
+		     )
+		values
+		     (
+		       #{memNo}
+		     , 1
+		     , #{refPost}
+		     , sysdate
+		     )
+	</insert>
+	
+	<!-- 좋아요 삭제용 -->
+	<!-- @author daeunlee -->
+	<delete id="deleteLike">
+		delete 
+		  INTO "LIKE"
+		     (
+		       mem_no
+		     , like_type
+		     , ref_post
+		     , like_date
+		     )
+		values
+		     (
+		       #{memNo}
+		     , 1
+		     , #{refPost}
+		     , sysdate
+		     )
+	</delete>
+	
+	<!-- 인기독서록 조회용 -->
+	<!-- @author daeunlee -->
+	<select id="selectTopBooklist" resultMap="booklistResult">
+		select *
+			  from (
+					select ROWNUM rnum, A.*
+					  from (
+					  		select
+					  		       bl_no
+							     , mem_nickname
+							     , bk_no
+							     , bk_title
+							     , bk_publish
+							     , writer_name
+							     , bl_title
+							     , bl_content
+							     , bl_count
+							     , bl_rate
+							     , bl_cdate
+							     , bl_mdate
+							     , bl_like
+							     , bl_scrap
+							  from booklist
+					          join members using (mem_no)
+					          join book using (bk_no)
+					 	     where bl_status = 'Y'
+					         order
+					            by bl_count desc
+					  	   )A
+				   )
+			 where rownum between 1 and 2
+	</select>
+
+	<!-- [메인] 인기 독서록 불러오기 (한진) -->
+	<select id="selectMainBookReport" resultMap="booklistResult">
+		 select
+		       B2.rank,
+		       B2.bl_no,
+		       B2.mem_no,
+		       B2.bl_rate,
+		       B2.bl_title,
+		       B2.bl_content,
+		       B2.bl_cdate,
+		       B2.bl_like,
+		       B2.mem_nickname,
+		       B2.change_img_name,
+		       B.bk_no,
+		       bk_title,
+		       bk_publish,
+		       writer_name,
+		       intro_changename
+		  from book B, (
+		                select *
+		                  from (
+		                        select rank() over (order by bl_like desc, bl_scrap desc) rank,
+		                               bl_no,
+		                               bl.bk_no,
+		                               bl.mem_no,
+		                               bl_title,
+		                               bl_content,
+		                               bl_rate,
+		                               TO_CHAR(TO_DATE(bl_cdate, 'YY-MM-DD'), 'YYYY-MM-DD') bl_cdate,
+		                               bl_like,
+		                               mem_nickname,
+		                               change_img_name
+		                          from booklist bl
+		                          join members m on (m.mem_no = bl.mem_no)
+		                        )
+		                  <![CDATA[where rank < 4]]>
+		                )B2
+		 where B.bk_no in B2.bk_no
+	</select>
+	<!-- 마이페이지 독서록조회 형우-->
+	<select id="selectMbListCount" resultType="_int">
+		select count(*)
+		  from booklist
+		 where bl_status='Y'
+	</select>
+	
+	<select id="selectMbList" resultMap="booklistResult">
+		select 
+		       bl_no
+		     , bk_no
+		     , bk_title
+		     , writer_name
+		     , bl_title
+		     , bl_content
+		     , bl_count		     
+		  from booklist
+		  join members using(mem_no)
+		  join book using(bk_no)
+		 where bl_status='Y'
+		 order
+		    by bl_no desc
+	</select>
+	<!--  스크랩 조회 (형우) -->
+	<select id="selectClippingListCount" resultType="_int">
+		select count(*)
+		  from booklist B
+		  join scrap S on (bl_no = br_no)
+		  join book using (bk_no)
+		 where S.mem_no = #{mem_no}
+	</select>
+	
+	<select id="selectClippingList" resultMap="booklistResult">
+		select
+		       bl_no,
+		       br_no,
+		       S.mem_no,
+		       bk_no,
+		       bk_title,
+		       writer_name,
+		       intro_changeName,
+		       bk_date,
+		       bl_content,
+		       bl_title
+		  from booklist B
+		  join scrap S on (bl_no = br_no)
+		  join book using (bk_no)
+		 where S.mem_no = '2'
+	</select>
+	<!--  스크랩 추가 -->
+	<insert id="insertClippinglist">
+		insert
+			into scrap
+			(
+			  br_no
+			, mem_no
+			, scrap_date
+			)
+			values
+			(
+			  #{ blNo }
+			, #{ memNo }
+			, sysdate			
+			)
+	</insert>
+	<!--  스크랩삭제  -->
+	<delete id="deleteClipping">
+		delete
+		    from scrap
+		    where br_no = ${blNo}
+
+	</delete>
+</mapper>

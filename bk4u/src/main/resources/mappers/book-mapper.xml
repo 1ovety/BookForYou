@@ -1,0 +1,1097 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="bookMapper">
+
+	<resultMap id="bookResult" type="Book">
+		<result column="bk_no" property="bkNo"/>
+		<result column="sub_cate_no" property="subCateNo"/>
+		<result column="main_cate_name" property="mainCateName"/>
+		<result column="sub_cate_name" property="subCateName"/>
+		<result column="interest_content" property="interestContent"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="bk_publish" property="bkPublish"/>
+		<result column="bk_date" property="bkDate"/>
+		<result column="bk_price" property="bkPrice"/>
+		<result column="intro_originname" property="introOriginName"/>
+		<result column="intro_changename" property="introChangeName"/>
+		<result column="bk_stock" property="bkStock"/>
+		<result column="bk_seldate" property="bkSelDate"/>
+		<result column="bk_mdate" property="bkModiDate"/>
+		<result column="bk_selstatus" property="bkSelStatus"/>
+		<result column="bk_age" property="bkAge"/>
+		<result column="bk_gender" property="bkGender"/>
+		<result column="bk_work" property="bkWork"/>
+		<result column="bk_level" property="bkLevel"/>
+		<result column="bk_status" property="bkStatus"/>
+		<result column="writer_name" property="writerName"/>
+		<result column="writer_intro" property="writerIntro"/>
+		<result column="writer_origin_name" property="writerOriginName"/>
+		<result column="writer_change_name" property="writerChangeName"/>
+		<result column="bk_content" property="bkContent"/>
+		<result column="bk_introduce" property="bkIntroduce"/>
+		<result column="grade_star" property="bkGrade"/>
+		<result column="cart_qty" property="bkQty"/>
+		<result column="rank" property="rank"/>
+		<result column="quantity" property="quantity"/>
+	</resultMap>
+
+	<resultMap id="booklistResult" type="Booklist">
+		<result column="bl_no" property="blNo"/>
+		<result column="mem_no" property="memNo"/>
+		<result column="mem_nickname" property="blWriter"/>
+		<result column="bl_title" property="blTitle"/>
+		<result column="bl_content" property="blContent"/>
+		<result column="bl_count" property="blCount"/>
+		<result column="bl_rate" property="blRate"/>
+		<result column="bl_cdate" property="blCdate"/>
+		<result column="bl_mdate" property="blMdate"/>
+		<result column="bl_like" property="blLike"/>
+		<result column="bl_scrap" property="blScrap"/>
+		<result column="bk_no" property="bkNo"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="bk_publish" property="bkPublish"/>
+		<result column="writer_name" property="writerName"/>
+		<result column="rank" property="rank"/>
+		<result column="change_img_name" property="changeImgName"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="bk_publish" property="bkPublish"/>
+		<result column="writer_name" property="writerName"/>
+		<result column="intro_changename" property="introChangeName"/>
+	</resultMap>
+	
+	<!-- [관리자] 전체 도서 개수 조회 (한진) -->
+	<select id="selectAllListCount" resultType="_int">
+		select 
+			   count(*)
+	      from book
+	</select>
+
+	<!-- [관리자] 전체 도서 목록 조회 (한진) -->
+	<select id="selectAdminBookList" resultMap="bookResult">
+		select 
+		       bk_no,
+		       sub_cate_no,
+		       bk_title,
+		       bk_publish,
+		       bk_date,
+		       bk_price,
+		       intro_originname,
+		       intro_changename,
+		       bk_stock,
+		       bk_seldate,
+		       bk_mdate,
+		       bk_selstatus,
+		       bk_age,
+		       bk_gender,
+		       bk_work,
+		       bk_level,
+		       bk_status,
+		       writer_name,
+		       writer_intro,
+		       writer_origin_name,
+		       writer_change_name,
+		       bk_content
+		  from book
+		 <choose>
+		 	<when test="bkStatus == 1">
+		 		where bk_status = '판매중'
+		 	</when> 
+		 	<when test="bkStatus == 2">
+		 		where bk_status = '품절'
+		 	</when>	
+		 	<when test="bkStatus == 3">
+		 		where bk_selstatus = 'Y'
+		 	</when>
+		 	<when test="bkStatus == 4">
+		 		where bk_selstatus = 'N'
+		 	</when>
+		 </choose>
+		 order
+		    by 
+		 <choose>
+		 	<when test="array == 0">
+		 		bk_date desc
+		 	</when> 
+		 	<when test="array == 1">
+		 		bk_date asc
+		 	</when>	
+		 	<when test="array == 2">
+		 		bk_stock desc
+		 	</when>
+		 	<when test="array == 3">
+		 		bk_stock asc
+		 	</when>
+		 </choose> 
+	</select>
+	
+	<!-- [공통] 도서 검색 결과 개수 조회 (연지) -->
+	<select id="selectSearchBookCount" resultType="_int">
+		select
+		       count(*)
+		  from book
+		 where bk_selstatus = 'Y'
+	 	<choose>
+	 		<when test="condition == 'searchAll'">
+	 			and bk_title
+	 			like '%' || #{keyword} || '%'
+	 			or writer_name
+	 			like '%' || #{keyword} || '%'
+	 			or bk_publish
+	 		</when>
+	 		<when test="condition == 'bookTitle'">
+	 			and bk_title
+	 		</when>
+	 		<when test="condition == 'writerName'">
+	 			and writer_name
+	 		</when>
+	 		<otherwise>
+	 			and bk_publish
+	 		</otherwise>
+	 	</choose>
+	 	like '%' || #{keyword} || '%'
+	</select>
+	
+	<!-- [공통] 도서 검색 결과 리스트 조회 (연지) -->
+	<select id="selectSearchBook" resultMap="bookResult">
+		select
+		       bk_no
+		     , sub_cate_no
+		     , bk_title
+		     , bk_publish
+		     , bk_price
+		     , bk_date
+		     , intro_originname
+		     , intro_changename
+		     , bk_stock
+		     , bk_seldate
+		     , bk_mdate
+		     , bk_selstatus
+		     , bk_age
+		     , bk_gender
+		     , bk_work
+		     , bk_level
+		     , bk_status
+		     , writer_name
+		     , writer_intro
+		     , writer_origin_name
+		     , writer_change_name
+		     , bk_content
+		     , bk_introduce
+		  from book
+		 where bk_selstatus = 'Y'
+	 	<choose>
+	 		<when test="condition == 'searchAll'">
+	 			and bk_title
+	 			like '%' || #{keyword} || '%'
+	 			or writer_name
+	 			like '%' || #{keyword} || '%'
+	 			or bk_publish
+	 		</when>
+	 		<when test="condition == 'bookTitle'">
+	 			and bk_title
+	 		</when>
+	 		<when test="condition == 'writerName'">
+	 			and writer_name
+	 		</when>
+	 		<otherwise>
+	 			and bk_publish
+	 		</otherwise>
+	 	</choose>
+	 	like '%' || #{keyword} || '%'
+	</select>
+	
+	<!-- [관리자] '판매중'인 도서 개수 조회 (한진) -->
+	<select id="selectStatusYCount" resultType="_int">
+		select 
+			   count(*)
+	      from book
+	     where bk_status = '판매중'
+	</select>
+	
+	<!-- [관리자] 게시 'Y'인 도서 개수 조회 (한진) -->
+	<select id="selectSelStatusYCount" resultType="_int">
+		select 
+			   count(*)
+	      from book
+	     where bk_selstatus = 'Y'
+	</select>
+	
+	<!-- [관리자] 검색조건에 일치하는 도서 개수 조회 (한진) -->
+	<select id="selectAdminSearchCount" resultType="_int">
+		select
+			   count(*)
+		  from book
+		<choose>
+			<when test="condition == 'AllBook'">
+				where bk_title like '%' || #{keyword} || '%'
+				   or writer_name like '%' || #{keyword} || '%'
+				   or bk_publish
+			</when>
+			<when test="condition == 'bookNo'">
+				  where bk_no
+			</when>		
+			<when test="condition == 'bookTitle'">
+				  where bk_title
+			</when>
+			<when test="condition == 'bookWriter'">
+				  where writer_name
+			</when>
+			<otherwise>
+				  where bk_publish
+			</otherwise>
+		</choose>
+		like '%' || #{keyword} || '%'
+	</select>
+	
+	<!-- [관리자] 검색조건에 일치하는 도서 목록 조회 (한진) -->
+	<select id="selectAdminSearchList" resultMap="bookResult">
+		select 
+		       bk_no,
+		       sub_cate_no,
+		       bk_title,
+		       bk_publish,
+		       bk_date,
+		       bk_price,
+		       intro_originname,
+		       intro_changename,
+		       bk_stock,
+		       bk_seldate,
+		       bk_mdate,
+		       bk_selstatus,
+		       bk_age,
+		       bk_gender,
+		       bk_work,
+		       bk_level,
+		       bk_status,
+		       writer_name,
+		       writer_intro,
+		       writer_origin_name,
+		       writer_change_name,
+		       bk_content
+		  from book
+		 <choose>
+			<when test="condition == 'AllBook'">
+				where bk_title like '%' || #{keyword} || '%'
+				   or writer_name like '%' || #{keyword} || '%'
+				   or bk_publish 
+			</when>
+			<when test="condition == 'bookNo'">
+				  where bk_no
+			</when>		
+			<when test="condition == 'bookTitle'">
+				  where bk_title
+			</when>
+			<when test="condition == 'bookWriter'">
+				  where writer_name
+			</when>
+			<otherwise>
+				  where bk_publish
+			</otherwise>
+		</choose>
+		like '%' || #{keyword} || '%'
+		 order
+		    by 
+		 <choose>
+		 	<when test="array == 0">
+		 		bk_date desc
+		 	</when> 
+		 	<when test="array == 1">
+		 		bk_date asc
+		 	</when>	
+		 	<when test="array == 2">
+		 		bk_stock desc
+		 	</when>
+		 	<when test="array == 3">
+		 		bk_stock asc
+		 	</when>
+		 </choose> 
+	</select>
+	
+	<select id="selectBook" resultMap="bookResult">
+		select 
+		       bk_no,
+		       sub_cate_no,
+		       bk_title,
+		       bk_publish,
+		       bk_date,
+		       bk_price,
+		       intro_originname,
+		       intro_changename,
+		       bk_stock,
+		       bk_seldate,
+		       bk_mdate,
+		       bk_selstatus,
+		       bk_age,
+		       bk_gender,
+		       bk_work,
+		       bk_level,
+		       bk_status,
+		       writer_name,
+		       writer_intro,
+		       writer_origin_name,
+		       writer_change_name,
+		       bk_content,
+		       bk_introduce
+		  from book
+		 where bk_no = #{bkNo}
+	</select>
+	
+	<!-- 
+	<select id="selectCartList" resultMap="bookResult">
+		select 
+		       bk.bk_no,
+		       sub_cate_no,
+		       bk_title,
+		       bk_publish,
+		       bk_date,
+		       bk_price,
+		       intro_originname,
+		       intro_changename,
+		       bk_stock,
+		       bk_seldate,
+		       bk_mdate,
+		       bk_selstatus,
+		       bk_age,
+		       bk_gender,
+		       bk_work,
+		       bk_level,
+		       bk_status,
+		       writer_name,
+		       writer_intro,
+		       writer_origin_name,
+		       writer_change_name,
+		       bk_content,
+               bk_grade,
+               cart_qty
+		  from (select g.*, c.cart_qty
+                  from (select bk_no, avg(grade_star) bk_grade
+                        from grade
+                        group by bk_no) g
+                  join cart c on (c.bk_no = g.bk_no)
+                  where mem_no = 2) g
+		  join book bk on (g.bk_no = bk.bk_no)
+         where bk.bk_no in (select bk_no
+                         from cart
+                         where mem_no = #{memNo})
+	</select>
+	 -->
+	
+	<!-- [공통] 도서 장바구니 조회 (연지) -->
+	<select id="selectCartList" resultMap="bookResult">
+				select 
+		       bk.bk_no,
+		       sub_cate_no,
+		       bk_title,
+		       bk_publish,
+		       bk_date,
+		       bk_price,
+		       intro_originname,
+		       intro_changename,
+		       bk_stock,
+		       bk_seldate,
+		       bk_mdate,
+		       bk_selstatus,
+		       bk_age,
+		       bk_gender,
+		       bk_work,
+		       bk_level,
+		       bk_status,
+		       writer_name,
+		       writer_intro,
+		       writer_origin_name,
+		       writer_change_name,
+		       bk_content,
+               cart_qty
+		  from (select bk_no, cart_qty
+                  from cart
+                where mem_no = #{memNo}) c
+		  join book bk on (c.bk_no = bk.bk_no)
+         where bk.bk_no in (select bk_no
+                         from cart
+                         where mem_no = #{memNo})
+	</select>
+	
+	<!-- [관리자] 도서 상태 변경 + 다중체크박스 (한진) -->
+	<update id="updateBookStatus">
+		update
+			   book
+		   set 
+		   <choose>
+		   		<when test="statusValue == 1">
+		   			bk_status = '판매중'
+		   		</when>
+		   		<when test="statusValue == 2">
+		   			bk_status = '품절'
+		   		</when>
+		   		<when test="statusValue == 3">
+		   			bk_selstatus = 'Y'
+		   		</when>
+		   		<when test="statusValue == 4">
+		   			bk_selstatus = 'N'
+		   		</when>
+		   </choose>
+		 where bk_no = #{ bkNo }
+	</update>
+	
+	<!-- [관리자] 도서 상세 보기 (한진) -->
+	<select id="selectAdminBookDetail" resultMap="bookResult">
+		select 
+		       bk_no,
+		       main_cate_name,
+		       sub_cate_name,
+		       interest_content,
+		       bk_title,
+		       bk_publish,
+		       bk_date,
+		       bk_price,
+		       intro_originname,
+		       intro_changename,
+		       bk_stock,
+		       bk_seldate,
+		       bk_mdate,
+		       bk_selstatus,
+		       bk_age,
+		       bk_gender,
+		       bk_work,
+		       bk_level,
+		       bk_status,
+		       writer_name,
+		       writer_intro,
+		       writer_origin_name,
+		       writer_change_name,
+		       bk_content
+		  from book
+		  join sub_category using(sub_cate_no)
+		  join main_category using(main_cate_no)
+		  join book_interest using(bk_no)
+		  join interest using(interest_no)
+		 where bk_no = #{bkNo}
+	</select>	
+	
+	<!-- [공통] 장바구니 유무 확인 (연지) -->
+	<select id="checkCart" resultType="_int">
+		select 
+		       count(*)
+		  from cart
+         where mem_no = #{memNo}
+           and bk_no = #{bkNo}
+	</select>
+	
+	<!-- [공통] 장바구니 수량 증가 (연지) -->
+	<update id="updateCart">
+		update
+			   cart
+		   set 
+		   	   cart_qty = cart_qty + #{cartQty}
+		 where mem_no = #{memNo}
+           and bk_no = #{bkNo}
+	</update>
+	
+	<!-- [공통] 장바구니 추가 (연지)-->
+	<insert id="insertCart">
+		insert
+		  into cart
+		  (
+		    bk_no
+		  , mem_no
+		  , cart_qty
+		  , cart_date
+		  )
+		  values
+		  (
+		    #{bkNo}
+		  , #{memNo}
+		  , #{cartQty}
+		  , sysdate
+		  )
+	</insert>
+	
+	<!-- [공통] 도서 삭제 (연지) -->
+	<delete id="deleteCart">
+		delete
+		  from cart
+		 where mem_no = #{memNo}
+           and bk_no = #{bkNo}
+	</delete>
+	
+	<!-- [관리자] 도서 수정 (한진) -->
+	<update id="updateAdminBook">
+		update
+			   (
+			   	 select
+			   	 		*
+			   	   from book
+				  where bk_no = #{bkNo}
+			    )
+		   set bk_title = #{bkTitle},
+		   	   writer_name = #{writerName},
+		   	   bk_publish = #{bkPublish},
+		   	   bk_date = #{bkDate},
+		   	   bk_price = #{bkPrice},
+		   	   bk_stock = #{bkStock},
+		   	   bk_status = #{bkStatus},
+		   	   bk_selstatus = #{bkSelStatus},
+		   	   intro_originname = #{introOriginName},
+		       intro_changename = #{introChangeName},
+		   	   bk_age = #{bkAge},
+		   	   bk_gender = #{bkGender},
+		   	   bk_work = #{bkWork},
+		   	   bk_level = #{bkLevel},
+		   	   sub_cate_no = (
+		   	   					select 
+		   	   					       sub_cate_no
+		   	   					  from sub_category
+		   	   					 where sub_cate_name = #{subCateName}
+		   	   					),
+		   	   writer_intro = #{writerIntro},
+		   	   writer_origin_name = #{writerOriginName},
+		   	   writer_change_name = #{writerChangeName},
+		   	   bk_content = #{bkContent}
+	</update>
+	
+	<!-- [관리자] 도서 추천 관심사 조회 (한진) -->
+	<select id="selectAdminBookInterest" resultType="string">
+		select 
+		        interest_content
+		  from interest
+		  join book_interest using(interest_no)
+		 where bk_no = #{bkNo}
+	</select>
+	
+	<!-- [관리자] 도서 추천 관심사 삽입 (한진) -->
+	<insert id="insertAdminBookItrs">
+		insert
+		  into book_interest
+		 	    (
+		 		 interest_no,
+		 		 bk_no
+		  		)
+		 values (
+		 		 (select interest_no
+		 		    from interest
+		 		   where interest_content = #{interestContent}
+		 		 ),
+		 		 #{bkNo}	
+		 		)		 
+	</insert>
+	
+	<!-- [관리자] 도서 추천 관심사 삭제 (한진) -->
+	<delete id="deleteAdminBookItrs">
+		delete
+		  from book_interest
+		 where bk_no = #{bkNo}
+		   and interest_no = (
+		   					   select interest_no
+		   					     from interest
+		   					    where interest_content = #{interestContent}
+		   					  )
+	</delete>
+	
+	<!-- [관리자] 도서 등록 (한진)  -->
+	<insert id="insertAdminBook">
+		insert
+		  into book
+		     (
+		       bk_no,
+		       sub_cate_no,
+		       bk_title,
+		       bk_publish,
+		       bk_date,
+		       bk_price,
+		       intro_originname,
+		       intro_changename,
+		       bk_stock,
+		       bk_seldate,
+		       bk_mdate,
+		       bk_selstatus,
+		       bk_age,
+		       bk_gender,
+		       bk_work,
+		       bk_level,
+		       bk_status,
+		       writer_name,
+		       writer_intro,
+		       writer_origin_name,
+		       writer_change_name,
+		       bk_content
+		     )
+		values
+		     (
+		       seq_bkno.nextval,
+		       (select sub_cate_no
+		          from sub_category
+		         where sub_cate_name = #{subCateName}
+		        ),        
+		        #{bkTitle},
+		        #{bkPublish},
+		        #{bkDate},
+		        #{bkPrice},
+		        #{introOriginName},
+		        #{introChangeName},
+		        #{bkStock},
+		        sysdate,
+		        sysdate,
+		        #{bkSelStatus},
+		        #{bkAge},
+		        #{bkGender},
+		        #{bkWork},
+		        #{bkLevel},
+		        #{bkStatus},
+		        #{writerName},
+		        #{writerIntro},
+		        #{writerOriginName},
+		        #{writerChangeName},
+		        #{bkContent}  
+		     )
+	</insert>
+	
+	<!-- [관리자] 마지막 bkNo알아내기 (한진) -->
+	<select id="selectAdminLastBkNo" resultType="_int">
+		select last_number
+		  from user_sequences
+		 where sequence_name = 'SEQ_BKNO'
+	</select>
+	
+	<!-- [공통] 도서 장바구니 수량 갱신 (연지) -->
+	<update id="updateCartQty">
+		update
+			   cart
+		   set cart_qty = #{cartQty}
+		 where mem_no = #{memNo}
+           and bk_no = #{bkNo}
+	</update>	
+	
+	<!-- [공통] 리스트 유무 확인 (연지) -->
+	<select id="checkList" resultType="_int">
+		select 
+		       count(*)
+		  from list
+         where mem_no = #{memNo}
+           and bk_no = #{bkNo}
+	</select>
+	
+	<!-- [공통] 리스트 추가 (연지)-->
+	<insert id="insertList">
+		insert
+		  into list
+		  (
+		    bk_no
+		  , mem_no
+		  , list_date
+		  )
+		  values
+		  (
+		    #{bkNo}
+		  , #{memNo}
+		  , sysdate
+		  )
+	</insert>
+	
+	<!-- [사용자] 마이페이지 나의 도서 리스트(찜한 목록) 갯수 조회 (세아)-->
+	<select id="selectMyListCount" resultType="_int">
+		select
+			count(*)
+		from list
+		where mem_no = #{memNo}	
+	</select>
+	
+	<!-- [사용자] 마이페이지 나의 도서 리스트 조회(세아) -->
+	<select id="selectMyList" resultMap="bookResult">
+		select bk_no,
+			    bk_title,
+			    bk_publish,
+			    bk_price, 
+			    nvl(grade_star,0) grade_star
+		from list
+		inner join book b using(bk_no)
+		left join (select nvl(round(avg(nvl(grade_star, 0)),1),0) as grade_star, bk_no
+  					from grade
+  					group by bk_no) using(bk_no)
+		where mem_no = #{memNo}
+	</select>
+	<!-- [관리자] 정기구독 상세 조회 - 도서 조회 (한진) -->
+	<select id="selectAdminSubscDetailBook" resultMap="bookResult">
+		select 
+		       bk_no,
+		       bk_title,
+		       writer_name,
+		       bk_publish,
+		       bk_price
+		  from book
+		  join subsc_bookorder using (bk_no)
+		 where subsc_no = #{subscNo}
+	</select>
+	
+	<!-- [사용자] 내 보관함에서 삭제하기(세아) -->
+	<delete id="deleteMyList">
+		delete
+		from list
+		where mem_no = #{memNo} and bk_no=#{bkNo}
+	</delete>
+	
+	<!-- [관리자] 회원 취향에 맞는 정기배송 책 목록 개수 조회 (한진) -->
+	<select id="selectAdminSubscBookCount" resultType="_int">
+		select 
+		       count(distinct bk_title)
+		  from book
+		  join sub_category using (sub_cate_no)
+		  join book_interest using (bk_no)
+		  join interest using (interest_no)
+		 where sub_cate_no in (
+		                        select 
+		                               sub_cate_no
+		                          from subscription
+		                          join members using (mem_no)
+		                          join mem_category using (mem_no)
+		                         where subsc_no = #{sNo}
+		                        )
+		    or interest_no in (
+		                        select
+		                               interest_no
+		                          from subscription s
+		                          join members m using (mem_no)
+		                          join mem_interest using (mem_no)
+		                          join interest using (interest_no)
+		                          where subsc_no = #{sNo}
+		                        )
+	</select>
+	
+	<!-- [관리자] 회원 취향에 맞는 정기배송 목록 조회 (한진) -->
+	<select id="selectAdminSubscBookList" resultMap="bookResult">
+		select distinct
+               bk_no,
+               bk_title,
+               bk_publish,
+               writer_name,
+               bk_date,
+               bk_price,
+               bk_stock,
+               intro_originname,
+               intro_changename,
+               sub_cate_name,
+               bk_age,
+               bk_work,
+               bk_gender,
+               bk_level
+          from book
+          join sub_category using (sub_cate_no)
+          join book_interest using (bk_no)
+          join interest using (interest_no)
+          where sub_cate_no in (
+	                              select sub_cate_no
+	                                from subscription
+	                                join members using (mem_no)
+	                                join mem_category using (mem_no)
+	                               where subsc_no = #{sNo} 
+                                )
+           or interest_no in (
+                                select
+                                       interest_no
+                                  from subscription s
+                                  join members m using (mem_no)
+                                  join mem_interest using (mem_no)
+                                  join interest using (interest_no)
+                                 where subsc_no = #{sNo}
+                                )
+		
+	</select>
+	
+	<!-- [관리자] 도서 삭제 (한진) -->
+	<delete id="deleteAdminBook">
+		delete
+		       book
+		 where bk_no = #{bn}
+	</delete>
+	
+	<!-- [관리자] 도서 관심사 행 삭제 (한진) -->
+	<delete id="deleteAdminBookInterest">
+		delete
+		       book_interest
+		 where bk_no = #{bn}
+	</delete>
+	
+	<!-- [사용자] 마이페이지 도서 평점 주기 -->
+	<insert id="insertMyBookGrade">
+		insert
+		into grade(
+			mem_no,
+			bk_no,
+			grade_star
+		)values(
+			#{memNo},
+			#{bkNo},
+			#{gradeStar}
+		)
+	</insert>
+	
+	<!-- [관리자] 정기구독 도서 선택 페이지 검색 결과 개수 조회 (한진) -->
+	<select id="selectAdminBSSearchListCount" resultType="_int">
+		select 
+		       count(distinct bk_title)
+		  from book
+		  join sub_category using (sub_cate_no)
+		  join book_interest using (bk_no)
+		  join interest using (interest_no)
+		 where (sub_cate_no in (
+		                        select 
+		                               sub_cate_no
+		                          from subscription
+		                          join members using (mem_no)
+		                          join mem_category using (mem_no)
+		                         where subsc_no = #{subscNo}
+		                        )
+		    or interest_no in (
+		                        select
+		                               interest_no
+		                          from subscription s
+		                          join members m using (mem_no)
+		                          join mem_interest using (mem_no)
+		                          join interest using (interest_no)
+		                          where subsc_no = #{subscNo}
+		                        ))
+		  <choose>
+	 		<when test="condition == 'searchAll'">
+	 			and (bk_title like '%' || #{keyword} || '%'
+	 			 or bk_no like '%' || #{keyword} || '%'
+	 			 or writer_name like '%' || #{keyword} || '%')
+	 		</when>
+	 		<when test="condition == 'bookTitle'">
+	 			and bk_title like '%' || #{keyword} || '%'
+	 		</when>
+	 		<when test="condition == 'bookNo'">
+	 			and bk_no like '%' || #{keyword} || '%'
+	 		</when>
+	 		<when test="condition == 'writerName'">
+	 			and writer_name like '%' || #{keyword} || '%'
+	 		</when>
+	 	</choose>
+	</select>
+	
+	<!-- [관리자] 정기구독 도서 선택 페이지 검색 결과 조회 (한진) -->
+	<select id="selectAdminBSSearchList" resultMap="bookResult">
+		select distinct
+               bk_no,
+               bk_title,
+               bk_publish,
+               writer_name,
+               bk_date,
+               bk_price,
+               bk_stock,
+               intro_originname,
+               intro_changename,
+               sub_cate_name,
+               bk_age,
+               bk_work,
+               bk_gender,
+               bk_level
+          from book
+          join sub_category using (sub_cate_no)
+          join book_interest using (bk_no)
+          join interest using (interest_no)
+          where (sub_cate_no in (
+	                              select sub_cate_no
+	                                from subscription
+	                                join members using (mem_no)
+	                                join mem_category using (mem_no)
+	                               where subsc_no = #{subscNo} 
+                                )
+           or interest_no in (
+                                select
+                                       interest_no
+                                  from subscription s
+                                  join members m using (mem_no)
+                                  join mem_interest using (mem_no)
+                                  join interest using (interest_no)
+                                 where subsc_no = #{subscNo}
+                                ))
+           <choose>
+	 		<when test="condition == 'searchAll'">
+	 			and (bk_title like '%' || #{keyword} || '%'
+	 			 or bk_no like '%' || #{keyword} || '%'
+	 			 or writer_name like '%' || #{keyword} || '%')
+	 		</when>
+	 		<when test="condition == 'bookTitle'">
+	 			and bk_title like '%' || #{keyword} || '%'
+	 		</when>
+	 		<when test="condition == 'bookNo'">
+	 			and bk_no like '%' || #{keyword} || '%'
+	 		</when>
+	 		<when test="condition == 'writerName'">
+	 			and writer_name like '%' || #{keyword} || '%'
+	 		</when>
+	 	</choose>
+		
+	</select>
+	
+	<!-- [메인] 베스트 셀러 조회 (한진) -->
+	<select id="selectMainBestSeller" resultMap="bookResult">
+		select
+		       B2.rank,
+		       B2.quantity,
+		       B.bk_no,
+		       bk_title,
+		       bk_publish,
+		       writer_name,
+		       intro_changename
+		  from book B, (
+		                select *
+		                  from (
+		                        select rank() over (order by sum(quantity) desc, bk_no desc) rank,
+		                               O.bk_no,
+		                               sum(quantity)quantity
+		                          from order_detail O
+		                         group
+		                            by bk_no
+		                        )
+		                  <![CDATA[where rank < 6]]>
+		                )B2
+		 where B.bk_no in B2.bk_no
+	</select>
+	
+	<!-- [메인] 도서 추천 조회 - 로그인을 했을 경우 (한진) -->
+	<select id="selectMainBookRecommand" resultMap="bookResult">
+		select distinct
+               bk_no,
+               bk_title,
+               bk_publish,
+               writer_name,
+               bk_date,
+               bk_price,
+               bk_stock,
+               intro_originname,
+               intro_changename,
+               bk_age,
+               bk_work,
+               bk_gender,
+               bk_level
+          from book
+          join book_interest using (bk_no)
+          join interest using (interest_no)
+          where bk_age = (
+                            select
+                                   mem_age
+                              from members
+                             where mem_no = #{memNo}
+                          )
+           and bk_gender = (
+                            select
+                                   mem_gender
+                              from members
+                             where mem_no = #{memNo}
+                          )
+	</select>
+	
+	<!-- [메인] 도서 추천 조회 - 로그인을 하지 않았을 경우 (한진) -->
+	<select id="selectMainBookRecommandToAll" resultMap="bookResult">
+		select *
+		  from 
+		     (
+		        select rank() over (order by bk_date desc, bk_seldate desc) rank,
+		               b.*
+		          from(
+		                select distinct
+		                               bk_no,
+		                               bk_title,
+		                               bk_publish,
+		                               writer_name,
+		                               bk_date,
+		                               bk_seldate,
+		                               bk_price,
+		                               bk_stock,
+		                               intro_originname,
+		                               intro_changename,
+		                               bk_age,
+		                               bk_work,
+		                               bk_gender,
+		                               bk_level
+		                          from book
+		                          join book_interest using (bk_no)
+		                          join interest using (interest_no)
+		                )b
+		        )
+		  <![CDATA[where rank < 4]]>
+	</select>
+	
+	<!-- [메인] 도서 추천 조회 - 로그인을 하지 않았을 경우 (한진) -->
+	<select id="selectBookList" resultMap="booklistResult">
+		select 
+		       bl_no
+		     , mem_nickname
+		     , bk.bk_no
+		     , bk_title
+		     , bk_publish
+		     , writer_name
+		     , bl_title
+		     , bl_content
+		     , bl_count
+		     , bl_rate
+		     , bl_cdate
+		     , bl_mdate
+		     , bl_like
+		     , bl_scrap
+		  from booklist bkl
+		  join members m on (m.mem_no = bkl.mem_no)
+		  join book bk on (bk.bk_no = bkl.bk_no)
+		 where bkl.bk_no = #{bkNo}
+           and bl_status = 'Y'
+		 order
+		    by bl_no desc
+	</select>
+	
+	<!-- [관리자] 지점별 도서 추가 (한진) -->
+	<insert id="insertBookForStore">
+		insert 
+		  into off_book
+		values
+		       (
+		         #{bkNo},
+		         #{storeNo},
+		         '대여가능',
+		         'N',
+		         sysdate
+		       ) 
+	</insert>
+	
+	<!-- [관리자] 지점별 도서 수정 (한진) -->
+	<update id="updateStoreBook">
+		update
+			   (
+			   	 select
+			   	 		*
+			   	   from book
+				  where bk_no = #{bkNo}
+			    )
+		   set bk_title = #{bkTitle},
+		   	   writer_name = #{writerName},
+		   	   bk_publish = #{bkPublish},
+		   	   bk_date = #{bkDate},
+		   	   bk_price = #{bkPrice},
+		   	   intro_originname = #{introOriginName},
+		       intro_changename = #{introChangeName},
+		   	   bk_age = #{bkAge},
+		   	   bk_gender = #{bkGender},
+		   	   bk_work = #{bkWork},
+		   	   bk_level = #{bkLevel},
+		   	   sub_cate_no = (
+		   	   					select 
+		   	   					       sub_cate_no
+		   	   					  from sub_category
+		   	   					 where sub_cate_name = #{subCateName}
+		   	   					),
+		   	   writer_intro = #{writerIntro},
+		   	   writer_origin_name = #{writerOriginName},
+		   	   writer_change_name = #{writerChangeName},
+		   	   bk_content = #{bkContent}
+	</update>
+	
+	<!-- [관리자] 지점별 도서 상태 수정 (한진) -->
+	<update id="updateStoreBookStatus">
+		update
+		       off_book
+		   set bk_status = #{bkStatus},
+		       bk_lct = #{bkLct}
+		 where bk_no = #{bkNo}
+		   and store_no = #{storeNo}
+	</update>
+	
+</mapper>

@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="subscriptionMapper">
+
+	<resultMap type="Subscription" id="SubscResult">
+		<result column="subsc_no" property="subscNo"/>
+		<result column="mem_no" property="memNo"/>
+		<result column="pay_no" property="payNo"/>
+		<result column="coupon_issue_no" property="couponIssueNo"/>
+		<result column="subsc_name" property="subscName"/>
+		<result column="subsc_period" property="subscPeriod"/>
+		<result column="subsc_price" property="subscPrice"/>
+		<result column="subsc_sdate" property="subscSdate"/>
+		<result column="subsc_enddate" property="subscEndDate"/>
+		<result column="subsc_deldate" property="subscDelDate"/>
+		<result column="subsc_status" property="subscStatus"/>
+		<result column="subsc_receiver" property="subscReceiver"/>
+		<result column="subsc_post" property="subscPost"/>
+		<result column="subsc_address" property="subscAddress"/>
+		<result column="address_detail" property="addressDetail"/>
+		<result column="address_ref" property="addressRef"/>
+		<result column="subsc_phone" property="subscPhone"/>
+		<result column="deliveryrequest" property="deliveryRequest"/>
+		<result column="admin_memo" property="adminMemo"/>
+		<result column="mem_name" property="memName"/>
+		<result column="mem_id" property="memId"/>
+		<result column="mem_phone" property="memPhone"/>
+		<result column="mem_email" property="memEmail"/>
+		<result column="status" property="payStatus"/>
+		<result column="shipping_date" property="shippingDate"/>
+		<result column="shipping_company" property="shippingCompany"/>
+		<result column="shipping_number" property="shippingNumber"/>
+		<result column="shipping_status" property="shippingStatus"/>
+		<result column="bk_title" property="bkTitle"/>
+		<result column="price_comma" property="priceComma"/>
+		<result column="coupon_price" property="couponPrice"/>
+	</resultMap>
+	
+	<resultMap type="Point" id="PointResult">
+		<result column="point_no" property="pointNo"/>
+		<result column="mem_no" property="memNo"/>
+		<result column="order_no" property="orderNo"/>
+		<result column="subsc_no" property="subscNo"/>
+		<result column="point_content" property="pointContent"/>
+		<result column="point_price" property="pointPrice"/>
+	</resultMap>
+	
+	<resultMap type="Coupon" id="CouponResult">
+		<result column="coupon_issue_num" property="couponIssueNum"/>
+		<result column="coupon_no" property="couponNo"/>
+		<result column="mem_no" property="memNo"/>
+		<result column="coupon_kind" property="couponKind"/>
+		<result column="create_date" property="createDate"/>
+		<result column="expire_date" property="expireDate"/>
+		<result column="status" property="status"/>
+		<result column="use_date" property="useDate"/>
+		<result column="coupon_name" property="couponName"/>
+		<result column="coupon_content" property="couponContent"/>
+		<result column="coupon_price" property="couponPrice"/>
+		<result column="coupon_category" property="couponCategory"/>
+		<result column="coupon_price_Rate" property="couponPriceRate"/>
+	</resultMap>
+
+	<!-- [관리자] 정기구독 목록 개수 조회 (한진) -->
+	<select id="selectAllListCount" resultType="_int">
+		select 
+		       count(*)
+		  from subscription
+	</select>
+
+	<!-- [관리자] 정기구독 목록 조회 (한진) -->
+	<select id="selectAdminSubscList" resultMap="SubscResult">
+		select
+		       subsc_no,
+		       mem_name,
+		       mem_id,
+		       regexp_replace(reverse(regexp_replace(reverse(to_char(p.price)), '([0-9]{3})','\1,')),'^,','') as "price_comma",		       
+		       subsc_sdate,
+		       subsc_enddate,
+		       subsc_name,
+		       subsc_period,
+		       subsc_price,
+		       subsc_deldate,
+		       subsc_status,
+		       subsc_receiver,
+		       deliveryrequest,
+		       admin_memo
+		  from subscription
+		  join members using (mem_no)
+		  join payment p using (pay_no)
+		  <choose>
+		  	<when test="subscStatus == 1">
+		  		where subsc_name = '베이직'
+		  	</when>
+		  	<when test="subscStatus == 2">
+		  		where subsc_name = '프리미엄'
+		  	</when>
+		  	<when test="subscStatus == 3">
+		  		where subsc_status = 'Y'
+		  	</when>
+		  	<when test="subscStatus == 4">
+		  		where subsc_status = 'N'
+		  	</when>
+		  </choose>
+		 order
+		    by
+		  <choose>
+		  		<when test="array == 0">
+		  			subsc_sdate desc
+		  		</when>
+		  		<when test="array == 1">
+		  			subsc_sdate asc
+		  		</when>
+		  </choose>
+	</select>
+	
+	<!-- [관리자] '베이직' 목록 개수 조회 (한진) -->
+	<select id="selectBasicListCount" resultType="_int">
+		select 
+		       count(*)
+		  from subscription
+		 where subsc_name = '베이직'
+	</select>
+	
+	<!-- [관리자] '프리미엄' 목록 개수 조회 (한진) -->
+	<select id="selectPremiumListCount" resultType="_int">
+		select 
+		       count(*)
+		  from subscription
+		 where subsc_name = '프리미엄'
+	</select>
+	
+	<!-- [관리자] '구독중' 목록 개수 조회 (한진) -->
+	<select id="selectStatusYListCount" resultType="_int">
+		select 
+		       count(*)
+		  from subscription
+		 where subsc_status = 'Y'
+	</select>
+	
+	<!-- [관리자] '구독해지' 목록 개수 조회 (한진) -->
+	<select id="selectStatusNListCount" resultType="_int">
+		select 
+		       count(*)
+		  from subscription
+		 where subsc_status = 'N'
+	</select>
+	
+	<!-- [관리자] 검색조건에 일치하는 목록 개수 조회 (한진) -->
+	<select id="selectAdminSubscListSearchCount" resultType="_int">
+		select
+			   count(*)
+		  from subscription
+		  join members using (mem_no)
+		  where subsc_no > 0
+		<choose>
+		 	<when test="subscStatus == 1">
+		 		and subsc_name = '베이직'
+		 	</when> 
+		 	<when test="subscStatus == 2">
+		 		and subsc_name = '프리미엄'
+		 	</when>	
+		 	<when test="subscStatus == 3">
+		 		and subsc_status = 'Y'
+		 	</when>
+		 	<when test="subscStatus == 4">
+		 		and subsc_status = 'N'
+		 	</when>
+		 </choose>
+		<choose>
+			<when test="condition == 'searchAll'">
+				and (subsc_no like '%' || #{keyword} || '%'
+				   or mem_name like '%' || #{keyword} || '%'
+				   or mem_id like '%' || #{keyword} || '%')
+			</when>
+			<when test="condition == 'subscNo'">
+				  and order_no like '%' || #{keyword} || '%'
+			</when>		
+			<when test="condition == 'memName'">
+				  and mem_name like '%' || #{keyword} || '%'
+			</when>
+			<when test="condition == 'memId'">
+				  and mem_id like '%' || #{keyword} || '%'
+			</when>
+		</choose>
+	</select>
+	
+	<!-- [관리자] 검색조건에 일치하는 목록 조회 (한진) -->
+	<select id="selectAdminSubscSearchList" resultMap="SubscResult">
+		select
+			   subsc_no,
+		       mem_name,
+		       mem_id,
+		       regexp_replace(reverse(regexp_replace(reverse(to_char(p.price)), '([0-9]{3})','\1,')),'^,','') as "price_comma",
+		       subsc_sdate,
+		       subsc_enddate,
+		       subsc_name,
+		       subsc_period,
+		       subsc_price,
+		       subsc_deldate,
+		       subsc_status,
+		       subsc_receiver,
+		       deliveryrequest,
+		       admin_memo
+		  from subscription
+		  join members using (mem_no)
+		  join payment p using (pay_no)
+		 where subsc_no > 0
+		<choose>
+		 	<when test="subscStatus == 1">
+		 		and subsc_name = '베이직'
+		 	</when> 
+		 	<when test="subscStatus == 2">
+		 		and subsc_name = '프리미엄'
+		 	</when>	
+		 	<when test="subscStatus == 3">
+		 		and subsc_status = 'Y'
+		 	</when>
+		 	<when test="subscStatus == 4">
+		 		and subsc_status = 'N'
+		 	</when>
+		 </choose>
+		<choose>
+			<when test="condition == 'searchAll'">
+				and (subsc_no like '%' || #{keyword} || '%'
+				   or mem_name like '%' || #{keyword} || '%'
+				   or mem_id like '%' || #{keyword} || '%')
+			</when>
+			<when test="condition == 'subscNo'">
+				  and order_no like '%' || #{keyword} || '%'
+			</when>		
+			<when test="condition == 'memName'">
+				  and mem_name like '%' || #{keyword} || '%'
+			</when>
+			<when test="condition == 'memId'">
+				  and mem_id like '%' || #{keyword} || '%'
+			</when>
+		</choose>
+		order
+		    by
+		  <choose>
+		  		<when test="array == 0">
+		  			subsc_sdate desc
+		  		</when>
+		  		<when test="array == 1">
+		  			subsc_sdate asc
+		  		</when>
+		  </choose>
+	</select>
+	
+	<!-- [관리자] 정기구독 상세 조회 (한진) -->
+	<select id="selectAdminSubscDetail" resultMap="SubscResult">
+		select
+			   subsc_no,
+               mem_no,
+               mem_id,
+               mem_name,
+               mem_phone,
+               mem_email,
+               regexp_replace(reverse(regexp_replace(reverse(to_char(p.price)), '([0-9]{3})','\1,')),'^,','') as "price_comma",
+		       subsc_sdate,
+		       subsc_enddate,
+		       subsc_name,
+		       subsc_period,
+		       subsc_price,
+		       subsc_deldate,
+		       subsc_status,
+		       subsc_receiver,
+               subsc_post,
+               subsc_address,
+               address_detail,
+               address_ref,
+               subsc_phone,
+		       deliveryrequest
+		  from subscription
+          join members using (mem_no)
+          join payment p using (pay_no)
+		 where subsc_no = #{subscNo}
+	</select>
+	
+	<!-- [관리자] 정기구독 상세 조회 - 배송 (한진) -->
+	<select id="selectAdminSubscDetailDel" resultMap="SubscResult">
+		select s1.*
+		  from (
+		         select
+		                row_number() over(partition by subsc_no order by shipping_date desc) rnum,
+		                t1.*
+		          from (
+		                select
+		                        subsc_no,
+		                        shipping_date,
+		                        shipping_company,
+		                        shipping_number,
+		                        shipping_status
+		                  from subsc_bookorder
+		                 where subsc_no = #{subscNo}
+		                ) t1
+		        ) s1
+		  where s1.rnum = 1
+	</select>
+	
+	<!-- [관리자] 배송지 변경 (한진) -->
+	<update id="updateAdminAddress">
+		update
+		       subscription
+		   set subsc_post = #{subscPost},
+		       subsc_address = #{subscAddress},
+		       address_detail = #{addressDetail},
+		       address_ref = #{addressRef}
+		 where subsc_no = #{subscNo}
+	</update>
+	
+	<!-- [관리자] 오늘 날짜의 정기배송 개수 조회 (한진) -->
+	<select id="selectTodaySubscCount" resultType="_int">
+		select 
+		       count(*)
+		  from subscription
+		  join members using (mem_no)
+		 where subsc_deldate = (
+				                 select
+				                        extract(day from sysdate) day
+				                   from dual
+				                )
+	</select>
+	
+	<!-- [관리자] 오늘 날짜의 정기배송 목록 조회 (한진) -->
+	<select id="selectTodaySubscList" resultMap="SubscResult">
+		select 
+		       subsc_no,
+		       subsc_sdate,
+		       subsc_enddate,
+		       subsc_deldate,
+		       subsc_name,
+		       subsc_period,
+		       mem_name,
+		       mem_id,
+		       deliveryrequest,
+		       admin_memo
+		  from subscription
+		  join members using (mem_no)
+		 where subsc_deldate = (
+		                        select
+		                               extract(day from sysdate) day
+		                          from dual
+		                        )
+	</select>
+	
+	<!-- [관리자] 선택된 날짜의 정기배송 개수 조회 (한진) -->
+	<select id="selectDaySubscCount" resultType="_int">
+		select 
+		       count(*)
+		  from subscription
+		  join members using (mem_no)
+		 where subsc_deldate = #{date}
+	</select>
+	
+	<!-- [관리자] 선택된 날짜의 정기배송 목록 조회 (한진) -->
+	<select id="selectDaySubscDeliveryList" resultMap="SubscResult">
+		select 
+		       subsc_no,
+		       subsc_sdate,
+		       subsc_enddate,
+		       subsc_deldate,
+		       subsc_name,
+		       subsc_period,
+		       mem_name,
+		       mem_id,
+		       deliveryrequest,
+		       admin_memo
+		  from subscription
+		  join members using (mem_no)
+		 where subsc_deldate = #{date}
+	</select>
+	
+	<!-- [관리자] 풀캘린더에 표시할 리스트 조회 (한진) -->
+	<select id="selectListForCalendarEvents" resultMap="SubscResult">
+		select 
+		       subsc_no,
+		       subsc_sdate,
+		       subsc_enddate,
+		       subsc_deldate,
+		       subsc_name,
+		       subsc_period,
+		       mem_name
+		  from subscription
+		  join members using (mem_no)
+	</select>
+	
+	<!-- [과니랒] 도서 발송 (한진) -->
+	<insert id="insertSubscOrder">
+		insert
+		  into subsc_bookorder
+		     (
+		       subsc_no,
+		       bk_no,
+		       shipping_date,
+		       shipping_company,
+		       shipping_number,
+		       shipping_status
+		     )
+		values
+		     (
+		       #{sNo},
+		       #{bNo},
+		       TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
+		       #{delCompany},
+		       #{shippingNumber},
+		       '배송중'
+		     )
+	</insert>
+	
+	<!-- 내쿠폰 조회 -->
+	<!-- @author daeunlee -->
+	<select id="selectSubscCoupon" resultMap="CouponResult">
+		select
+		        coupon_issue_num
+		      , coupon_no  
+		      , mc.coupon_kind
+		      , create_date
+		      , expire_date
+		      , coupon_name
+		      , coupon_content
+		      , coupon_price
+		      , mem_no
+		  from mem_coupon mc
+		  join coupon using (coupon_no)
+		 where mem_no = #{memNo}
+		   and coupon_status = 'Y'
+	</select>
+	
+	<!-- 포인트 조회 -->
+	<!-- @author daeunlee -->
+	<select id="selectSubPoint" resultMap="PointResult">
+		select
+		       point_price
+		  from point
+		 where mem_no = #{memNo}
+	</select>
+	
+	<!-- 정기구독 등록 -->
+	<!-- @author daeunlee -->
+	<insert id="insertSubsc">
+		insert
+		  into subscription
+		  	 (
+		       subsc_no
+		     , mem_no
+		     , subsc_name
+		     , subsc_price
+		     , subsc_period
+		     , subsc_sdate
+		     , subsc_enddate
+		     , subsc_deldate
+		     , subsc_status
+		     , subsc_receiver
+		     , subsc_post
+		     , subsc_address
+		     , address_detail
+		     , address_ref
+		     , subsc_phone
+		     , deliveryrequest
+		     , coupon_price
+		     )
+		values
+		     ( 
+		       SEQ_SUBNO.nextval
+		     , #{memNo}
+		     , #{subscName}
+		     , #{subscPrice}
+		     , #{subscPeriod}
+		     , #{subscSdate}
+		     , #{subscEndDate}
+		     , #{subscDelDate}
+		     , 'Y'
+		     , #{subscReceiver}
+		     , #{subscPost}
+		     , #{subscAddress}
+		     , #{addressDetail}
+		     , #{addressRef}
+		     , #{subscPhone}
+		     , #{deliveryRequest}
+		     , #{couponPrice}
+		     )
+	</insert>
+	
+	<!-- 정기구독 조회 -->
+	<!-- @author daeunlee -->
+	<select id="selectSubscription" resultMap="SubscResult">
+		select *
+				  from (
+						select ROWNUM rnum, A.*
+						  from (
+						  		select
+						  		       subsc_no
+	                                 , mem_no
+	                                 , coupon_issue_no
+	                                 , s.coupon_price
+	                                 , subsc_name
+	                                 , subsc_price
+	                                 , subsc_period
+	                                 , subsc_sdate
+	                                 , subsc_enddate
+	                                 , subsc_deldate
+	                                 , subsc_status
+	                                 , subsc_receiver
+	                                 , subsc_post
+	                                 , subsc_address
+	                                 , address_detail
+	                                 , address_ref
+	                                 , subsc_phone
+	                                 , deliveryrequest
+								  from subscription s
+						          join members using (mem_no)
+	                              join mem_coupon using (mem_no)
+	                              join coupon using (coupon_no)
+						 	     where mem_no = #{memNo}
+						         order
+						            by subsc_sdate desc
+						  	   )A
+					   )
+				<![CDATA[where rownum < 2]]>
+	</select>
+	
+	<!-- [관리자] 정기구독 발송 내역 개수 조회 (한진) -->
+	<select id="selectAdminSubscOrderCount" resultType="_int">
+		select
+		       count(*)
+		  from subsc_bookorder
+	</select>
+	
+	<!-- [관리자] 정기구독 발송 내역 조회 (한진) -->
+	<select id="selectAdminSubscOrderList" resultMap="SubscResult">
+		select
+		       subsc_no,
+		       mem_name,
+		       mem_id,
+		       bk_title,
+		       shipping_date,
+		       shipping_company,
+		       shipping_number,
+		       shipping_status,
+		       deliveryrequest,
+		       admin_memo
+		  from subsc_bookorder
+		  join book using(bk_no)
+		  join subscription using(subsc_no)
+		  join members using (mem_no)
+		  <choose>
+		  	<when test="array == 0">
+		  		order 
+		  		   by shipping_date desc 
+		  	</when>
+		  	<when test="array == 1">
+		  		order 
+		  		   by shipping_date asc 
+		  	</when>
+		  </choose>
+	</select>
+	
+	<!-- [관리자] 메모 등록/수정 (한진) -->
+	<update id="updateAdminMemo">
+		update
+		       subscription
+		   set admin_memo = #{adminMemo}
+		 where subsc_no = #{subscNo}
+	</update>
+	
+	<!-- [관리자] 메모 삭제 (한진) -->
+	<update id="deleteAdminMemo">
+		update
+		       subscription
+		   set admin_memo = null
+		 where subsc_no = #{subscNo}
+	</update>
+	
+	<!-- [관리자] 정기구독 도서 중복 체크 (한진) -->
+	<select id="checkBookDuplicates" resultType="_int">
+		select
+		       count(*) count
+		  from subsc_bookorder
+		  join book using (bk_no)
+		 where subsc_no = #{sNo}
+		   and bk_no = #{bkNo}
+	</select>
+	
+	<!-- [관리자] 정기구독 발송 내역 페이지 검색 결과 개수 조회 (한진) -->
+	<select id="selectSubscOrderSearchCount" resultType="_int">
+		select
+		       count(*)
+		  from subsc_bookorder
+		  join subscription using (subsc_no)
+		  join members using (mem_no)
+		 <choose>
+	 		<when test="condition == 'searchAll'">
+	 			where (subsc_no like '%' || #{keyword} || '%'
+	 			 or mem_name like '%' || #{keyword} || '%'
+	 			 or mem_id like '%' || #{keyword} || '%')
+	 		</when>
+	 		<when test="condition == 'subscNo'">
+	 			where subsc_no like '%' || #{keyword} || '%'
+	 		</when>
+	 		<when test="condition == 'memName'">
+	 			where mem_name like '%' || #{keyword} || '%'
+	 		</when>
+	 		<when test="condition == 'memId'">
+	 			where mem_id like '%' || #{keyword} || '%'
+	 		</when>
+	 	</choose>
+	</select>
+	
+	<!-- [관리자] 정기구독 발송 내역 페이지 검색 결과 개수 조회 (한진) -->
+	<select id="selectAdminOrderSearchList" resultMap="SubscResult">
+		select
+		       subsc_no,
+		       mem_name,
+		       mem_id,
+		       bk_title,
+		       shipping_date,
+		       shipping_company,
+		       shipping_number,
+		       shipping_status,
+		       deliveryrequest,
+		       admin_memo
+		  from subsc_bookorder
+		  join subscription using (subsc_no)
+		  join members using (mem_no)
+		  join book using (bk_no)
+		 <choose>
+	 		<when test="condition == 'searchAll'">
+	 			where (subsc_no like '%' || #{keyword} || '%'
+	 			 or mem_name like '%' || #{keyword} || '%'
+	 			 or mem_id like '%' || #{keyword} || '%')
+	 		</when>
+	 		<when test="condition == 'subscNo'">
+	 			where subsc_no like '%' || #{keyword} || '%'
+	 		</when>
+	 		<when test="condition == 'memName'">
+	 			where mem_name like '%' || #{keyword} || '%'
+	 		</when>
+	 		<when test="condition == 'memId'">
+	 			where mem_id like '%' || #{keyword} || '%'
+	 		</when>
+	 	</choose>
+	 	 order
+	 		by
+	 	<choose>
+	 		<when test="array == 0">
+	 			 shipping_date desc
+	 		</when>
+	 		<when test="array == 1">
+	 			 shipping_date asc
+	 		</when>
+	 	</choose>
+	</select>
+	
+</mapper>
