@@ -5,7 +5,10 @@ BK4U is a book rental service website. Users select book genres of book. The adm
 
 # Skills
 ●	Developed and designed full stack Spring framework web application.
+
 ●	Writing a Table Specification during this project taught me systematic documentation of data structures and data management strategies.
+
 ●	Using Use Case Diagrams in UML to model the functionality of a system and the interactions between users and conduct requirements analysis.
+
 ●	Used MyBatis connected with Oracle to build a search function and request a page list
 
